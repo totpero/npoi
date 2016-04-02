@@ -24,7 +24,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         private CT_SheetFormatPr sheetFormatPrField = null;
 
-        private List<CT_Cols> colsField = null;
+        private List<CT_Cols> colsField = new List<CT_Cols>();
 
         private CT_SheetData sheetDataField = new CT_SheetData();
 
@@ -453,10 +453,14 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
         public CT_Cols GetColsArray(int index)
         {
-            if (null == colsField) { colsField = new List<CT_Cols>(); }
+            if (null == colsField)
+            {
+                colsField = new List<CT_Cols>();
+                colsField.Add(new CT_Cols());
+            }
             return this.colsField[index];
         }
-        public List<CT_Cols> GetColsArray()
+        public List<CT_Cols> GetColsList()
         {
             return this.colsField;
         }
@@ -711,6 +715,8 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get
             {
+                if (this.conditionalFormattingField == null)
+                    this.conditionalFormattingField = new List<CT_ConditionalFormatting>();
                 return this.conditionalFormattingField;
             }
             set
@@ -980,7 +986,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         public void UnsetPageSetup()
         {
-            throw new NotImplementedException();
+            this.pageSetup = null;
         }
     }
 

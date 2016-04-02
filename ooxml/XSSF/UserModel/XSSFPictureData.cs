@@ -98,17 +98,20 @@ namespace NPOI.XSSF.UserModel
          * @see NPOI.ss.usermodel.Workbook#PICTURE_TYPE_PNG
          * @see NPOI.ss.usermodel.Workbook#PICTURE_TYPE_DIB
          */
-        public int GetPictureType()
+        public PictureType PictureType
         {
-            String contentType = GetPackagePart().ContentType;
-            foreach (PictureType relation in RELATIONS.Keys)
+            get
             {
-                if (RELATIONS[(int)relation].ContentType.Equals(contentType))
+                String contentType = GetPackagePart().ContentType;
+                foreach (PictureType relation in RELATIONS.Keys)
                 {
-                    return (int)relation;
+                    if (RELATIONS[(int)relation].ContentType.Equals(contentType))
+                    {
+                        return relation;
+                    }
                 }
+                return PictureType.None;
             }
-            return 0;
         }
 
 
@@ -133,6 +136,14 @@ namespace NPOI.XSSF.UserModel
         public string MimeType
         {
             get { return GetPackagePart().ContentType; }
+        }
+
+        /**
+         * *PictureData objects store the actual content in the part directly without keeping a 
+         * copy like all others therefore we need to handle them differently.
+         */
+        protected internal override void PrepareForCommit() {
+            // do not clear the part here
         }
     }
 }

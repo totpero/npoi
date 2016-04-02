@@ -421,7 +421,7 @@ namespace NPOI.HSSF.Record
         /**
          * Collapses the drawing records into an aggregate.
          * read Drawing, Obj, TxtObj, Note and Continue records into single byte array,
-         * create Escher tree from byte array, create map <EscherRecord, Record>
+         * create Escher tree from byte array, create map &lt;EscherRecord, Record&gt;
          *
          * @param records - list of all records inside sheet
          * @param locFirstDrawingRecord - location of the first DrawingRecord inside sheet
@@ -662,7 +662,17 @@ namespace NPOI.HSSF.Record
          */
         private static short GetSid(List<RecordBase> records, int loc)
         {
-            return ((Record)records[(loc)]).Sid;
+            RecordBase record = records[(loc)];
+            if (record is Record)
+            {
+                return ((Record)record).Sid;
+            }
+            else
+            {
+                // Aggregates don't have a sid
+                // We could step into them, but for these needs we don't care
+                return -1;
+            }
         }
 
 
@@ -702,7 +712,7 @@ namespace NPOI.HSSF.Record
                 }
 
                 int drawingRecordSize = rawEscherSize + (shapeToObj.Count) * 4;
-                if (rawEscherSize != 0 && spEndingOffsets.Count == 1/**EMPTY**/)
+                if (rawEscherSize != 0 && spEndingOffsets.Count == 1/*EMPTY*/)
                 {
                     continueRecordsHeadersSize += 4;
                 }
@@ -1278,6 +1288,7 @@ namespace NPOI.HSSF.Record
             EscherSpRecord sp = (EscherSpRecord)spContainer.GetChildById(EscherSpRecord.RECORD_ID);
             sp.ShapeId = (shapeId);
         }
+
         public void RemoveTailRecord(NoteRecord note)
         {
             tailRec.Remove(note.ShapeId);
@@ -1307,6 +1318,8 @@ namespace NPOI.HSSF.Record
         internal NoteRecord GetNoteRecordByObj(ObjRecord obj)
         {
             CommonObjectDataSubRecord cod = (CommonObjectDataSubRecord)obj.SubRecords[0];
+            if (!tailRec.ContainsKey(cod.ObjectId))
+                return null;
             return tailRec[(cod.ObjectId)];
         }
     }

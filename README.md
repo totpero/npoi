@@ -1,13 +1,15 @@
 NPOI
 ====
 
-This project is the .NET version of POI Java project at http://poi.apache.org/. POI is an open source project which can help you read/write Office 2003/2007 files.<br />
-<br />
-The source code in GitHub is a clone of the SVN http://npoi.googlecode.com/svn/trunk/.
+[![Join the chat at https://gitter.im/tonyqus/npoi](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/tonyqus/npoi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![NuGet Version](https://img.shields.io/nuget/v/NPOI.svg?style=flat)](https://www.nuget.org/packages/NPOI/) [![NuGet Downloads](https://img.shields.io/nuget/dt/NPOI.svg?style=flat)](https://www.nuget.org/packages/NPOI/)<br />
+This project is the .NET version of POI Java project. With NPOI, you can read/write Office 2003/2007 files very easily.<br />
 
-【抵制京东，从我做起】<br />
-详细原因请见：http://blog.sina.com.cn/s/blog_701d1da40101gwkw.html<br />
-<br />
+Support and Service
+===================
+Neuzilla is the studio behind NPOI. <br />
+To follow us, please visit http://www.linkedin.com/company/neuzilla <br />
+![官方微信公众号](https://github.com/tonyqus/npoi/raw/master/neuzilla_wechat_qrcode.jpg)
 
 Advantage of NPOI
 =================
@@ -21,10 +23,17 @@ g. .Net 2.0 based even for xlsx and docx (though we also support .NET 4.0)<br />
 h. Real successful cases all over the world<br />
 i. huge amout of basic examples
 
-NPOI on SNS
+How to join
 ============
-QQ Group: 20144214<br />
+If you have passion to contribute code, please contact tony.qu@neuzilla.com
+
+Neuzilla on SNS
+============
+Homepage: http://blog.neuzilla.com <br/>
+Linkedin Group: http://www.linkedin.com/groups/Neuzilla-User-Group-6655065 <br/>
 Twitter: http://twitter.com/tonyqus <br />
+QQ Group: 20144214<br />
+Email: support@neuzilla.com
 
 System Requirement
 ===================

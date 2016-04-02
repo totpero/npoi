@@ -40,8 +40,7 @@ namespace NPOI.OpenXmlFormats.Dml
         {
             sw.Write(string.Format("<a:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         private int valField;
@@ -85,9 +84,8 @@ namespace NPOI.OpenXmlFormats.Dml
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<a:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            XmlHelper.WriteAttribute(sw, "val", this.val, true);
+            sw.Write("/>");
         }
 
         private int valField;
@@ -143,8 +141,7 @@ namespace NPOI.OpenXmlFormats.Dml
             sw.Write(string.Format("<a:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "pos", this.pos);
             XmlHelper.WriteAttribute(sw, "algn", this.algn.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute]
@@ -247,6 +244,47 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.tabField = value;
             }
         }
+
+        internal void Write(StreamWriter sw, string p)
+        {
+            sw.Write("<a:{0}>", p);
+            if (this.tab != null)
+            {
+                foreach (CT_TextTabStop tts in tab)
+                {
+                    tts.Write(sw, "tab");
+                }
+            }
+            sw.Write("</a:{0}>", p);
+        }
+
+        internal static CT_TextTabStopList Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        {
+            CT_TextTabStopList ttsl = new CT_TextTabStopList();
+            ttsl.tab = new List<CT_TextTabStop>();
+            foreach (XmlNode childNode in node)
+            {
+                if(childNode.LocalName=="tab")
+                    ttsl.tab.Add(CT_TextTabStop.Parse(childNode, namespaceManager));
+            }
+            return ttsl;
+        }
+
+        public CT_TextTabStop AddNewTab()
+        {
+            this.tabField.Add(new CT_TextTabStop());
+            return this.tabField[this.tabField.Count - 1];
+        }
+
+        public int SizeOfTabArray()
+        {
+            return tabField.Count;
+        }
+
+        public CT_TextTabStop GetTabArray(int idx)
+        {
+            return tabField[idx];
+        }
     }
 
 
@@ -282,8 +320,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
-            sw.Write(">");
+            sw.Write(string.Format("<a:{0}>", nodeName));
             if (this.rPr != null)
                 this.rPr.Write(sw, "rPr");
             sw.Write(string.Format("</a:{0}>", nodeName));
@@ -300,6 +337,12 @@ namespace NPOI.OpenXmlFormats.Dml
             {
                 this.rPrField = value;
             }
+        }
+
+        public CT_TextCharacterProperties AddNewRPr()
+        {
+            this.rPr = new CT_TextCharacterProperties();
+            return rPr;
         }
     }
 
@@ -331,8 +374,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
-            sw.Write(">");
+            sw.Write(string.Format("<a:{0}>", nodeName));
             if (this.spcPct != null)
                 this.spcPct.Write(sw, "spcPct");
             if (this.spcPts != null)
@@ -348,6 +390,28 @@ namespace NPOI.OpenXmlFormats.Dml
         {
             get { return this.spcPtsField; }
             set { this.spcPtsField = value; }
+        }
+
+        public CT_TextSpacingPercent AddNewSpcPct()
+        {
+            this.spcPctField = new CT_TextSpacingPercent();
+            return this.spcPctField;
+        }
+
+        public CT_TextSpacingPoint AddNewSpcPts()
+        {
+            this.spcPtsField = new CT_TextSpacingPoint();
+            return this.spcPtsField;
+        }
+
+        public bool IsSetSpcPct()
+        {
+            return this.spcPctField != null;
+        }
+
+        public bool IsSetSpcPts()
+        {
+            return this.spcPtsField != null;
         }
     }
 
@@ -367,18 +431,37 @@ namespace NPOI.OpenXmlFormats.Dml
             ctObj.r = new List<CT_RegularTextRun>();
             ctObj.br = new List<CT_TextLineBreak>();
             ctObj.fld = new List<CT_TextField>();
+            ctObj.items = new List<object>();
             foreach (XmlNode childNode in node.ChildNodes)
             {
                 if (childNode.LocalName == "pPr")
+                {
                     ctObj.pPr = CT_TextParagraphProperties.Parse(childNode, namespaceManager);
+                    ctObj.items.Add(ctObj.pPr);
+                }
                 else if (childNode.LocalName == "endParaRPr")
+                {
                     ctObj.endParaRPr = CT_TextCharacterProperties.Parse(childNode, namespaceManager);
+                    ctObj.items.Add(ctObj.endParaRPr);
+                }
                 else if (childNode.LocalName == "r")
-                    ctObj.r.Add(CT_RegularTextRun.Parse(childNode, namespaceManager));
+                {
+                    CT_RegularTextRun r = CT_RegularTextRun.Parse(childNode, namespaceManager);
+                    ctObj.r.Add(r);
+                    ctObj.items.Add(r);
+                }
                 else if (childNode.LocalName == "br")
-                    ctObj.br.Add(CT_TextLineBreak.Parse(childNode, namespaceManager));
+                {
+                    CT_TextLineBreak br = CT_TextLineBreak.Parse(childNode, namespaceManager);
+                    ctObj.br.Add(br);
+                    ctObj.items.Add(br);
+                }
                 else if (childNode.LocalName == "fld")
-                    ctObj.fld.Add(CT_TextField.Parse(childNode, namespaceManager));
+                {
+                    CT_TextField fld = CT_TextField.Parse(childNode, namespaceManager);
+                    ctObj.fld.Add(fld);
+                    ctObj.items.Add(fld);
+                }
             }
             return ctObj;
         }
@@ -391,25 +474,40 @@ namespace NPOI.OpenXmlFormats.Dml
             sw.Write(">");
             if (this.pPr != null)
                 this.pPr.Write(sw, "pPr");
-            if (this.r != null)
+            //if (this.r != null)
+            //{
+            //    foreach (CT_RegularTextRun x in this.r)
+            //    {
+            //        x.Write(sw, "r");
+            //    }
+            //}
+            //if (this.br != null)
+            //{
+            //    foreach (CT_TextLineBreak x in this.br)
+            //    {
+            //        x.Write(sw, "br");
+            //    }
+            //}
+            //if (this.fld != null)
+            //{
+            //    foreach (CT_TextField x in this.fld)
+            //    {
+            //        x.Write(sw, "fld");
+            //    }
+            //}
+            foreach (object o in items)
             {
-                foreach (CT_RegularTextRun x in this.r)
+                if (o is CT_RegularTextRun)
                 {
-                    x.Write(sw, "r");
+                    (o as CT_RegularTextRun).Write(sw, "r");
                 }
-            }
-            if (this.br != null)
-            {
-                foreach (CT_TextLineBreak x in this.br)
+                else if (o is CT_TextLineBreak)
                 {
-                    x.Write(sw, "br");
+                    (o as CT_TextLineBreak).Write(sw, "br");
                 }
-            }
-            if (this.fld != null)
-            {
-                foreach (CT_TextField x in this.fld)
+                else if (o is CT_TextField)
                 {
-                    x.Write(sw, "fld");
+                    (o as CT_TextField).Write(sw, "fld");
                 }
             }
             if (this.endParaRPr != null)
@@ -419,12 +517,19 @@ namespace NPOI.OpenXmlFormats.Dml
 
         private CT_TextParagraphProperties pPrField;
 
-        private List<CT_RegularTextRun> rField;
+        private List<CT_RegularTextRun> rField = new List<CT_RegularTextRun>();
 
-        private List<CT_TextLineBreak> brField;
+        private List<CT_TextLineBreak> brField = new List<CT_TextLineBreak>();
 
-        private List<CT_TextField> fldField;
+        private List<CT_TextField> fldField = new List<CT_TextField>();
 
+        private List<object> itemsField = new List<object>();
+        [XmlIgnore]
+        public List<object> items
+        {
+            get { return itemsField; }
+            set { itemsField = value; }
+        }
         private CT_TextCharacterProperties endParaRPrField;
 
         public CT_RegularTextRun AddNewR()
@@ -433,6 +538,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.rField = new List<CT_RegularTextRun>();
             CT_RegularTextRun rtr = new CT_RegularTextRun();
             this.rField.Add(rtr);
+            this.itemsField.Add(rtr);
             return rtr;
         }
         public CT_TextParagraphProperties AddNewPPr()
@@ -517,6 +623,19 @@ namespace NPOI.OpenXmlFormats.Dml
         {
             return rField.Count;
         }
+
+        public bool IsSetPPr()
+        {
+            return this.pPrField != null;
+        }
+
+        public CT_TextLineBreak AddNewBr()
+        {
+            CT_TextLineBreak br = new CT_TextLineBreak();
+            this.brField.Add(br);
+            this.itemsField.Add(br);
+            return br;
+        }
     }
 
     [Serializable]
@@ -555,7 +674,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         private CT_TextBlipBullet buBlipField;
 
-        private List<CT_TextTabStop> tabLstField;
+        private CT_TextTabStopList tabLstField;
 
         private CT_TextCharacterProperties defRPrField;
 
@@ -621,6 +740,8 @@ namespace NPOI.OpenXmlFormats.Dml
             ctObj.indent = XmlHelper.ReadInt(node.Attributes["indent"]);
             if (node.Attributes["algn"] != null)
                 ctObj.algn = (ST_TextAlignType)Enum.Parse(typeof(ST_TextAlignType), node.Attributes["algn"].Value);
+            else
+                ctObj.algn = ST_TextAlignType.l;
             ctObj.defTabSz = XmlHelper.ReadInt(node.Attributes["defTabSz"]);
             ctObj.rtl = XmlHelper.ReadBool(node.Attributes["rtl"]);
             ctObj.eaLnBrk = XmlHelper.ReadBool(node.Attributes["eaLnBrk"]);
@@ -628,7 +749,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 ctObj.fontAlgn = (ST_TextFontAlignType)Enum.Parse(typeof(ST_TextFontAlignType), node.Attributes["fontAlgn"].Value);
             ctObj.latinLnBrk = XmlHelper.ReadBool(node.Attributes["latinLnBrk"]);
             ctObj.hangingPunct = XmlHelper.ReadBool(node.Attributes["hangingPunct"]);
-            ctObj.tabLst = new List<CT_TextTabStop>();
+  
             foreach (XmlNode childNode in node.ChildNodes)
             {
                 if (childNode.LocalName == "lnSpc")
@@ -664,7 +785,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 else if (childNode.LocalName == "extLst")
                     ctObj.extLst = CT_OfficeArtExtensionList.Parse(childNode, namespaceManager);
                 else if (childNode.LocalName == "tabLst")
-                    ctObj.tabLst.Add(CT_TextTabStop.Parse(childNode, namespaceManager));
+                    ctObj.tabLst = CT_TextTabStopList.Parse(childNode, namespaceManager);
             }
             return ctObj;
         }
@@ -676,9 +797,10 @@ namespace NPOI.OpenXmlFormats.Dml
             sw.Write(string.Format("<a:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "marL", this.marL);
             XmlHelper.WriteAttribute(sw, "marR", this.marR);
-            XmlHelper.WriteAttribute(sw, "lvl", this.lvl);
+            XmlHelper.WriteAttribute(sw, "lvl", this.lvl, true);
             XmlHelper.WriteAttribute(sw, "indent", this.indent);
-            XmlHelper.WriteAttribute(sw, "algn", this.algn.ToString());
+            if(algn!= ST_TextAlignType.l)
+                XmlHelper.WriteAttribute(sw, "algn", this.algn.ToString());
             XmlHelper.WriteAttribute(sw, "defTabSz", this.defTabSz);
             XmlHelper.WriteAttribute(sw, "rtl", this.rtl, false);
             XmlHelper.WriteAttribute(sw, "eaLnBrk", this.eaLnBrk, false);
@@ -715,17 +837,14 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.buChar.Write(sw, "buChar");
             if (this.buBlip != null)
                 this.buBlip.Write(sw, "buBlip");
+            if (this.tabLstField != null)
+            {
+                this.tabLstField.Write(sw, "tabLst");
+            }
             if (this.defRPr != null)
                 this.defRPr.Write(sw, "defRPr");
             if (this.extLst != null)
                 this.extLst.Write(sw, "extLst");
-            if (this.tabLst!= null)
-            {
-                foreach (CT_TextTabStop x in this.tabLst)
-                {
-                    x.Write(sw, "tabLst");
-                }
-            }
             sw.Write(string.Format("</a:{0}>", nodeName));
         }
         
@@ -912,7 +1031,7 @@ namespace NPOI.OpenXmlFormats.Dml
         }
 
         [XmlElement(Order = 14)]
-        public List<CT_TextTabStop> tabLst
+        public CT_TextTabStopList tabLst
         {
             get
             {
@@ -960,6 +1079,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.marLField = value;
+                this.marLFieldSpecified = true;
             }
         }
 
@@ -986,6 +1106,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.marRField = value;
+                this.marRFieldSpecified = true;
             }
         }
 
@@ -1015,6 +1136,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.lvlField = value;
+                this.lvlFieldSpecified = true;
             }
         }
 
@@ -1041,6 +1163,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.indentField = value;
+                this.indentFieldSpecified = true;
             }
         }
 
@@ -1067,6 +1190,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.algnField = value;
+                this.algnFieldSpecified = true;
             }
         }
 
@@ -1093,6 +1217,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.defTabSzField = value;
+                this.defTabSzFieldSpecified = true;
             }
         }
 
@@ -1119,6 +1244,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.rtlField = value;
+                this.rtlFieldSpecified = value;
             }
         }
 
@@ -1145,6 +1271,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.eaLnBrkField = value;
+                this.eaLnBrkFieldSpecified = value;
             }
         }
 
@@ -1171,6 +1298,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.fontAlgnField = value;
+                this.fontAlgnFieldSpecified = true;
             }
         }
 
@@ -1197,6 +1325,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.latinLnBrkField = value;
+                this.latinLnBrkFieldSpecified = value;
             }
         }
 
@@ -1223,6 +1352,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.hangingPunctField = value;
+                this.hangingPunctFieldSpecified = value;
             }
         }
 
@@ -1237,6 +1367,238 @@ namespace NPOI.OpenXmlFormats.Dml
             {
                 this.hangingPunctFieldSpecified = value;
             }
+        }
+
+        public bool IsSetAlgn()
+        {
+            return this.algnFieldSpecified;
+        }
+
+        public bool IsSetBuNone()
+        {
+            return this.buNoneField != null;
+        }
+
+        public bool IsSetBuFont()
+        {
+            return this.buFontField != null;
+        }
+
+        public bool IsSetBuChar()
+        {
+            return this.buCharField != null;
+        }
+
+        public bool IsSetBuAutoNum()
+        {
+            return this.buAutoNumField != null;
+        }
+
+        public void AddNewBuNone()
+        {
+            this.buNoneField = new CT_TextNoBullet();
+        }
+
+        public bool IsSetBuBlip()
+        {
+            return this.buBlipField != null;
+        }
+
+        public bool IsSetBuClr()
+        {
+            return this.buClrField != null;
+        }
+
+        public bool IsSetBuClrTx()
+        {
+            return this.buClrTxField != null;
+        }
+
+        public bool IsSetBuFontTx()
+        {
+            return this.buFontTxField != null;
+        }
+
+        public bool IsSetBuSzPct()
+        {
+            return this.buSzPctField != null;
+        }
+
+        public bool IsSetBuSzPts()
+        {
+            return this.buSzPtsField != null;
+        }
+
+        public bool IsSetBuSzTx()
+        {
+            return this.buSzTxField != null;
+        }
+
+        public CT_TextCharBullet AddNewBuChar()
+        {
+            this.buCharField = new CT_TextCharBullet();
+            return this.buCharField;
+        }
+
+        public CT_TextFont AddNewBuFont()
+        {
+            this.buFontField = new CT_TextFont();
+            return this.buFontField;
+        }
+
+        public void UnsetBuNone()
+        {
+            this.buNoneField = null;
+        }
+
+        public void UnsetBuSzTx()
+        {
+            this.buSzTxField = null;
+        }
+
+        public void UnsetBuSzPts()
+        {
+            this.buSzPtsField = null;
+        }
+
+        public void UnsetBuAutoNum()
+        {
+            this.buAutoNumField = null;
+        }
+
+        public void UnsetBuBlip()
+        {
+            this.buBlipField = null;
+        }
+
+        public void UnsetBuChar()
+        {
+            this.buCharField = null;
+        }
+
+        public void UnsetBuClr()
+        {
+            this.buClrField = null;
+        }
+
+        public void UnsetBuClrTx()
+        {
+            this.buClrTxField = null;
+        }
+
+        public void UnsetBuFont()
+        {
+            this.buFontField = null;
+        }
+
+        public void UnsetBuFontTx()
+        {
+            this.buFontTxField = null;
+        }
+
+        public void UnsetBuSzPct()
+        {
+            this.buSzPctField = null;
+        }
+
+        public void UnsetAlgn()
+        {
+            this.algnFieldSpecified = false;
+        }
+
+        public bool IsSetFontAlgn()
+        {
+            return this.fontAlgnFieldSpecified;
+        }
+
+        public void UnsetFontAlgn()
+        {
+            this.fontAlgnFieldSpecified = false;
+        }
+
+        public CT_Color AddNewBuClr()
+        {
+            this.buClrField = new CT_Color();
+            return this.buClrField;
+        }
+
+        public CT_TextBulletSizePercent AddNewBuSzPct()
+        {
+            this.buSzPctField = new CT_TextBulletSizePercent();
+            return this.buSzPctField;
+        }
+
+        public CT_TextBulletSizePoint AddNewBuSzPts()
+        {
+            this.buSzPtsField = new CT_TextBulletSizePoint();
+            return this.buSzPtsField;
+        }
+
+        public bool IsSetIndent()
+        {
+            return this.indentFieldSpecified;
+        }
+
+        public void UnsetIndent()
+        {
+            this.indentFieldSpecified = false;
+        }
+
+        public bool IsSetMarL()
+        {
+            return this.marLFieldSpecified;
+        }
+
+        public void UnsetMarL()
+        {
+            this.marLFieldSpecified = false;
+        }
+
+        public bool IsSetMarR()
+        {
+            return this.marRFieldSpecified;
+        }
+
+        public void UnsetMarR()
+        {
+            this.marRFieldSpecified = false;
+        }
+
+        public bool IsSetDefTabSz()
+        {
+            return this.defTabSzFieldSpecified;
+        }
+
+        public bool IsSetTabLst()
+        {
+            return this.tabLstField != null;
+        }
+
+        public CT_TextTabStopList AddNewTabLst()
+        {
+            this.tabLstField = new CT_TextTabStopList();
+            return this.tabLstField;
+        }
+
+        public bool IsSetLnSpc()
+        {
+            return this.lnSpcField != null;
+        }
+
+        public bool IsSetSpcBef()
+        {
+            return this.spcBefField != null;
+        }
+
+        public bool IsSetSpcAft()
+        {
+            return this.spcAftField != null;
+        }
+
+        public CT_TextAutonumberBullet AddNewBuAutoNum()
+        {
+            this.buAutoNumField = new CT_TextAutonumberBullet();
+            return this.buAutoNumField;
         }
     }
 

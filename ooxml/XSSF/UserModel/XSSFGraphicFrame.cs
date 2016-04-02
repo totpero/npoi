@@ -63,8 +63,7 @@ namespace NPOI.XSSF.UserModel
          */
         public static CT_GraphicalObjectFrame Prototype()
         {
-            if (prototype == null)
-            {
+
                 CT_GraphicalObjectFrame graphicFrame = new CT_GraphicalObjectFrame();
 
                 NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_GraphicalObjectFrameNonVisual nvGraphic = graphicFrame.AddNewNvGraphicFramePr();
@@ -75,7 +74,7 @@ namespace NPOI.XSSF.UserModel
 
 
 
-                NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_Transform2D transform = graphicFrame.AddNewXfrm();
+                CT_Transform2D transform = graphicFrame.AddNewXfrm();
                 CT_PositiveSize2D extPoint = transform.AddNewExt();
                 CT_Point2D offPoint = transform.AddNewOff();
 
@@ -87,7 +86,7 @@ namespace NPOI.XSSF.UserModel
                 CT_GraphicalObject graphic = graphicFrame.AddNewGraphic();
 
                 prototype = graphicFrame;
-            }
+            
             return prototype;
         }
 

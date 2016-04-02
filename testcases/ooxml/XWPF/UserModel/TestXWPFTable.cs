@@ -60,6 +60,19 @@ namespace NPOI.XWPF.UserModel
             Assert.IsNotNull(ctTable.GetTrArray(0).GetTcArray(0).GetPArray(0));
         }
 
+        [Test]
+        public void TestTblGrid()
+        {
+            XWPFDocument doc = new XWPFDocument();
+            CT_Tbl ctTable = new CT_Tbl();
+            CT_TblGrid cttblgrid = ctTable.AddNewTblGrid();
+            cttblgrid.AddNewGridCol().w = 123;
+            cttblgrid.AddNewGridCol().w = 321;
+
+            XWPFTable xtab = new XWPFTable(ctTable, doc);
+            Assert.AreEqual(123, xtab.GetCTTbl().tblGrid.gridCol[0].w);
+            Assert.AreEqual(321, xtab.GetCTTbl().tblGrid.gridCol[1].w);
+        }
 
         [Test]
         public void TestGetText()
@@ -134,8 +147,8 @@ namespace NPOI.XWPF.UserModel
 
             XWPFTable xtab = new XWPFTable(table, doc);
             XWPFTableRow row = xtab.CreateRow();
-            row.SetHeight(20);
-            Assert.AreEqual(20, row.GetHeight());
+            row.Height = (20);
+            Assert.AreEqual(20, row.Height);
         }
         [Test]
         public void TestSetGetMargins()

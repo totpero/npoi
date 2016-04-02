@@ -23,14 +23,11 @@ namespace NPOI.XWPF.UserModel
     using NPOI.OpenXmlFormats.Wordprocessing;
 
     /**
-     * <p>
-     * 8 Jan 2010
-     * </p>
-     * <p>
-     * // This Interface represents an object, which is able to have a collection of paragraphs and tables
-     *	this can be XWFPDocument, XWPFHeader, XWPFFooter, XWPFTableCell
-     * </p>
-     * @author Philipp Epp
+     * An IBody represents the different parts of the document which
+     * can contain collections of Paragraphs and Tables. It provides a
+     * common way to work with these and their contents.
+     * Typically, this is something like a XWPFDocument, or one of
+     *  the parts in it like XWPFHeader, XWPFFooter, XWPFTableCell
      *
      */
     public interface IBody
@@ -41,7 +38,10 @@ namespace NPOI.XWPF.UserModel
          * belongs.
          * @return the Part, to which the body belongs
          */
-        POIXMLDocumentPart GetPart();
+        POIXMLDocumentPart Part
+        {
+            get;
+        }
 
         /**
          * Get the PartType of the body, for example
@@ -67,7 +67,7 @@ namespace NPOI.XWPF.UserModel
          *  of the IBodyPart, for complex cases
          *  where a paragraph isn't used.
          */
-		IList<XWPFTable> Tables { get; }
+        IList<XWPFTable> Tables { get; }
 
         /**
          * if there is a corresponding {@link XWPFParagraph} of the parameter ctTable in the paragraphList of this header or footer

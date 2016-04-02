@@ -17,7 +17,24 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_SdtContentCell
     {
-
+        public override string ToString()
+        {
+            string text = string.Empty;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (StreamWriter sw = new StreamWriter(ms))
+                {
+                    this.Write(sw, "sdtContent");
+                    sw.Flush();
+                    ms.Position = 0;
+                    using (StreamReader sr = new StreamReader(ms))
+                    {
+                        text = sr.ReadToEnd();
+                    }
+                }
+            }
+            return text;
+        }
         private ArrayList itemsField;
 
         private List<ItemsChoiceType23> itemsElementNameField;
@@ -1757,11 +1774,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         private ArrayList itemsField;
 
-        private List<ItemsChoiceType17> itemsElementNameField;
+        private List<SdtPrElementType> itemsElementNameField;
 
         public CT_SdtPr()
         {
-            this.itemsElementNameField = new List<ItemsChoiceType17>();
+            this.itemsElementNameField = new List<SdtPrElementType>();
             this.itemsField = new ArrayList();
         }
 
@@ -1801,7 +1818,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         [XmlElement("ItemsElementName", Order = 1)]
         [XmlIgnore]
-        public List<ItemsChoiceType17> ItemsElementName
+        public List<SdtPrElementType> ItemsElementName
         {
             get
             {
@@ -1822,107 +1839,107 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 if (childNode.LocalName == "richText")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.richText);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.richText);
                 }
                 else if (childNode.LocalName == "docPartList")
                 {
                     ctObj.Items.Add(CT_SdtDocPart.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.docPartList);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.docPartList);
                 }
                 else if (childNode.LocalName == "docPartObj")
                 {
                     ctObj.Items.Add(CT_SdtDocPart.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.docPartObj);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.docPartObj);
                 }
                 else if (childNode.LocalName == "dropDownList")
                 {
                     ctObj.Items.Add(CT_SdtDropDownList.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.dropDownList);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.dropDownList);
                 }
                 else if (childNode.LocalName == "equation")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.equation);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.equation);
                 }
                 else if (childNode.LocalName == "group")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.group);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.group);
                 }
                 else if (childNode.LocalName == "id")
                 {
                     ctObj.Items.Add(CT_DecimalNumber.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.id);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.id);
                 }
                 else if (childNode.LocalName == "lock")
                 {
                     ctObj.Items.Add(CT_Lock.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.@lock);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.@lock);
                 }
                 else if (childNode.LocalName == "date")
                 {
                     ctObj.Items.Add(CT_SdtDate.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.date);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.date);
                 }
                 else if (childNode.LocalName == "placeholder")
                 {
                     ctObj.Items.Add(CT_Placeholder.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.placeholder);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.placeholder);
                 }
                 else if (childNode.LocalName == "rPr")
                 {
                     ctObj.Items.Add(CT_RPr.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.rPr);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.rPr);
                 }
                 else if (childNode.LocalName == "showingPlcHdr")
                 {
                     ctObj.Items.Add(CT_OnOff.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.showingPlcHdr);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.showingPlcHdr);
                 }
                 else if (childNode.LocalName == "tag")
                 {
                     ctObj.Items.Add(CT_String.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.tag);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.tag);
                 }
                 else if (childNode.LocalName == "temporary")
                 {
                     ctObj.Items.Add(CT_OnOff.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.temporary);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.temporary);
                 }
                 else if (childNode.LocalName == "text")
                 {
                     ctObj.Items.Add(CT_SdtText.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.text);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.text);
                 }
                 else if (childNode.LocalName == "picture")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.picture);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.picture);
                 }
                 else if (childNode.LocalName == "alias")
                 {
                     ctObj.Items.Add(CT_String.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.alias);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.alias);
                 }
                 else if (childNode.LocalName == "bibliography")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.bibliography);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.bibliography);
                 }
                 else if (childNode.LocalName == "citation")
                 {
                     ctObj.Items.Add(new CT_Empty());
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.citation);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.citation);
                 }
                 else if (childNode.LocalName == "comboBox")
                 {
                     ctObj.Items.Add(CT_SdtComboBox.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.comboBox);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.comboBox);
                 }
                 else if (childNode.LocalName == "dataBinding")
                 {
                     ctObj.Items.Add(CT_DataBinding.Parse(childNode, namespaceManager));
-                    ctObj.ItemsElementName.Add(ItemsChoiceType17.dataBinding);
+                    ctObj.ItemsElementName.Add(SdtPrElementType.dataBinding);
                 }
             }
             return ctObj;
@@ -1932,21 +1949,24 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
-            foreach (object o in this.Items)
+            
+            for (int i=0;i<this.Items.Count;i++)
             {
-                if (o is CT_Empty)
+                object o = Items[i];
+                SdtPrElementType t= this.itemsElementNameField[i];
+                if (o is CT_Empty && t== SdtPrElementType.richText)
                     sw.Write("<richText/>");
-                else if (o is CT_SdtDocPart)
+                else if (o is CT_SdtDocPart&& t  == SdtPrElementType.docPartList)
                     ((CT_SdtDocPart)o).Write(sw, "docPartList");
-                else if (o is CT_SdtDocPart)
+                else if (o is CT_SdtDocPart&& t == SdtPrElementType.docPartObj)
                     ((CT_SdtDocPart)o).Write(sw, "docPartObj");
                 else if (o is CT_SdtDropDownList)
                     ((CT_SdtDropDownList)o).Write(sw, "dropDownList");
-                else if (o is CT_Empty)
+                else if (o is CT_Empty&& t== SdtPrElementType.equation)
                     sw.Write("<equation/>");
-                else if (o is CT_Empty)
+                else if (o is CT_Empty&& t== SdtPrElementType.group)
                     sw.Write("<group/>");
-                else if (o is CT_DecimalNumber)
+                else if (o is CT_DecimalNumber&& t== SdtPrElementType.id)
                     ((CT_DecimalNumber)o).Write(sw, "id");
                 else if (o is CT_Lock)
                     ((CT_Lock)o).Write(sw, "lock");
@@ -1956,42 +1976,49 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                     ((CT_Placeholder)o).Write(sw, "placeholder");
                 else if (o is CT_RPr)
                     ((CT_RPr)o).Write(sw, "rPr");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff && t== SdtPrElementType.showingPlcHdr)
                     ((CT_OnOff)o).Write(sw, "showingPlcHdr");
-                else if (o is CT_String)
+                else if (o is CT_String&& t== SdtPrElementType.tag)
                     ((CT_String)o).Write(sw, "tag");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff && t== SdtPrElementType.temporary)
                     ((CT_OnOff)o).Write(sw, "temporary");
                 else if (o is CT_SdtText)
                     ((CT_SdtText)o).Write(sw, "text");
-                else if (o is CT_Empty)
+                else if (o is CT_Empty && t== SdtPrElementType.picture)
                     sw.Write("<picture/>");
-                else if (o is CT_String)
+                else if (o is CT_String&& t== SdtPrElementType.alias)
                     ((CT_String)o).Write(sw, "alias");
-                else if (o is CT_Empty)
+                else if (o is CT_Empty && t== SdtPrElementType.bibliography)
                     sw.Write("<bibliography/>");
-                else if (o is CT_Empty)
+                else if (o is CT_Empty && t== SdtPrElementType.citation)
                     sw.Write("<citation/>");
                 else if (o is CT_SdtComboBox)
                     ((CT_SdtComboBox)o).Write(sw, "comboBox");
                 else if (o is CT_DataBinding)
                     ((CT_DataBinding)o).Write(sw, "dataBinding");
+                
             }
             sw.Write(string.Format("</w:{0}>", nodeName));
         }
 
         public CT_DecimalNumber AddNewId()
         {
-            return AddNewObject<CT_DecimalNumber>(ItemsChoiceType17.id);
+            return AddNewObject<CT_DecimalNumber>(SdtPrElementType.id);
         }
 
         public CT_SdtDocPart AddNewDocPartObj()
         {
-            return AddNewObject<CT_SdtDocPart>(ItemsChoiceType17.docPartObj);
+            return AddNewObject<CT_SdtDocPart>(SdtPrElementType.docPartObj);
         }
+
+        public CT_String[] GetAliasArray()
+        {
+            return GetObjectList<CT_String>(SdtPrElementType.alias).ToArray();
+        }
+
         #region Generic methods for object operation
 
-        private List<T> GetObjectList<T>(ItemsChoiceType17 type) where T : class
+        public List<T> GetObjectList<T>(SdtPrElementType type) where T : class
         {
             lock (this)
             {
@@ -2004,7 +2031,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 return list;
             }
         }
-        private int SizeOfArray(ItemsChoiceType17 type)
+        private int SizeOfArray(SdtPrElementType type)
         {
             lock (this)
             {
@@ -2017,7 +2044,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 return size;
             }
         }
-        private T GetObjectArray<T>(int p, ItemsChoiceType17 type) where T : class
+        private T GetObjectArray<T>(int p, SdtPrElementType type) where T : class
         {
             lock (this)
             {
@@ -2027,7 +2054,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 return itemsField[pos] as T;
             }
         }
-        private T InsertNewObject<T>(ItemsChoiceType17 type, int p) where T : class, new()
+        private T InsertNewObject<T>(SdtPrElementType type, int p) where T : class, new()
         {
             T t = new T();
             lock (this)
@@ -2038,7 +2065,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             return t;
         }
-        private T AddNewObject<T>(ItemsChoiceType17 type) where T : class, new()
+        private T AddNewObject<T>(SdtPrElementType type) where T : class, new()
         {
             T t = new T();
             lock (this)
@@ -2048,7 +2075,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             return t;
         }
-        private void SetObject<T>(ItemsChoiceType17 type, int p, T obj) where T : class
+        private void SetObject<T>(SdtPrElementType type, int p, T obj) where T : class
         {
             lock (this)
             {
@@ -2062,7 +2089,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                         pos, this.itemsField[pos].GetType().Name, typeof(T).Name));
             }
         }
-        private int GetObjectIndex(ItemsChoiceType17 type, int p)
+        private int GetObjectIndex(SdtPrElementType type, int p)
         {
             int index = -1;
             int pos = 0;
@@ -2081,7 +2108,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             return index;
         }
-        private void RemoveObject(ItemsChoiceType17 type, int p)
+        private void RemoveObject(SdtPrElementType type, int p)
         {
             lock (this)
             {
@@ -2097,7 +2124,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
     [Serializable]
     [XmlType(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IncludeInSchema = false)]
-    public enum ItemsChoiceType17
+    public enum SdtPrElementType
     {
 
     

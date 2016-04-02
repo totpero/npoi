@@ -79,7 +79,7 @@ namespace NPOI.XWPF.UserModel
          * save and Commit footer
          */
 
-        protected override void Commit()
+        protected internal override void Commit()
         {
             /*XmlOptions xmlOptions = new XmlOptions(DEFAULT_XML_OPTIONS);
             xmlOptions.SaveSyntheticDocumentElement=(new QName(CTNumbering.type.Name.NamespaceURI, "ftr"));
@@ -126,6 +126,11 @@ namespace NPOI.XWPF.UserModel
                         XWPFTable t = new XWPFTable((CT_Tbl)o, this);
                         tables.Add(t);
                         bodyElements.Add(t);
+                    }
+                    if (o is CT_SdtBlock)
+                    {
+                        XWPFSDT c = new XWPFSDT((CT_SdtBlock)o, this);
+                        bodyElements.Add(c);
                     }
                 }
             } catch (Exception e) {

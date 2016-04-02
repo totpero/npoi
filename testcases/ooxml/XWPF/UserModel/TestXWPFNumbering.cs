@@ -22,6 +22,7 @@ namespace NPOI.XWPF.UserModel
     using NUnit.Framework;
 
     using NPOI.XWPF;
+    using NPOI.OpenXmlFormats.Wordprocessing;
 
     [TestFixture]
     public class TestXWPFNumbering
@@ -59,6 +60,68 @@ namespace NPOI.XWPF.UserModel
 
             string CompareAbstractNum = num.GetCTNum().abstractNumId.val;
             Assert.AreEqual(abstractNumId, CompareAbstractNum);
+        }
+        [Test]
+        public void TestGetNumIlvl()
+        {
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("Numbering.docx");
+            string numIlvl = "0";
+            Assert.AreEqual(numIlvl, doc.Paragraphs[0].GetNumIlvl());
+            numIlvl = "1";
+            Assert.AreEqual(numIlvl, doc.Paragraphs[5].GetNumIlvl());
+        }
+        [Test]
+        public void TestGetNumFmt()
+        {
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("Numbering.docx");
+            Assert.AreEqual("bullet", doc.Paragraphs[0].GetNumFmt());
+            Assert.AreEqual("bullet", doc.Paragraphs[1].GetNumFmt());
+            Assert.AreEqual("bullet", doc.Paragraphs[2].GetNumFmt());
+            Assert.AreEqual("bullet", doc.Paragraphs[3].GetNumFmt());
+            Assert.AreEqual("decimal", doc.Paragraphs[4].GetNumFmt());
+            Assert.AreEqual("lowerLetter", doc.Paragraphs[5].GetNumFmt());
+            Assert.AreEqual("lowerRoman", doc.Paragraphs[6].GetNumFmt());
+        }
+
+        [Test]
+        public void TestLvlText()
+        {
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("Numbering.docx");
+
+            Assert.AreEqual("%1.%2.%3.", doc.Paragraphs[(12)].NumLevelText);
+
+            Assert.AreEqual("NEW-%1-FORMAT", doc.Paragraphs[(14)].NumLevelText);
+
+            XWPFParagraph p = doc.Paragraphs[(18)];
+            Assert.AreEqual("%1.", p.NumLevelText);
+            //test that null doesn't throw NPE
+            //Assert.IsNull(p.GetNumFmt());
+
+            //C# enum is never null
+            Assert.AreEqual(ST_NumberFormat.@decimal.ToString(), p.GetNumFmt());
+        }
+
+        [Test]
+        public void TestOverrideList()
+        {
+            //TODO: for now the try/catch block ensures loading/inclusion of CTNumLevel
+            //for down stream Processing.
+            //Ideally, we should find files that actually use overrides and test against those.
+            //Use XWPFParagraph's GetNumStartOverride() in the actual tests
+
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("Numbering.docx");
+            XWPFParagraph p = doc.Paragraphs[(18)]; XWPFNumbering numbering = doc.CreateNumbering();
+            bool ex = false;
+            Assert.IsNull(p.GetNumStartOverride());
+            try
+            {
+                numbering.GetNum(p.GetNumID()).GetCTNum().GetLvlOverrideArray(1);
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                ex = true;
+            }
+            Assert.IsTrue(ex);
         }
 
     }

@@ -22,6 +22,7 @@ namespace NPOI.SS.UserModel
     using System.Collections.Generic;
 
     using NPOI.SS.Util;
+    using System.Collections;
 
     /// <summary>
     /// Indicate the position of the margin. One of left, right, top and bottom.
@@ -80,7 +81,7 @@ namespace NPOI.SS.UserModel
     /// The most common type of sheet is the worksheet, which is represented as a grid of cells. Worksheet cells can
     /// contain text, numbers, dates, and formulas. Cells can also be formatted.
     /// </remarks>
-    public interface ISheet //: IEnumerator<IRow>
+    public interface ISheet
     {
 
         /// <summary>
@@ -164,9 +165,21 @@ namespace NPOI.SS.UserModel
         /// <summary>
         /// get the width (in units of 1/256th of a character width )
         /// </summary>
-        /// <param name="columnIndex">the column to set (0-based)</param>
+        /// <param name="columnIndex">the column to get (0-based)</param>
         /// <returns>the width in units of 1/256th of a character width</returns>
         int GetColumnWidth(int columnIndex);
+
+        /// <summary>
+        /// get the width in pixel
+        /// </summary>
+        /// <param name="columnIndex"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Please note, that this method works correctly only for workbooks
+        /// with the default font size (Arial 10pt for .xls and Calibri 11pt for .xlsx).
+        /// If the default font is changed the column width can be streched
+        /// </remarks>
+        float GetColumnWidthInPixels(int columnIndex);
 
         /// <summary>
         /// Get the default column width for the sheet (if the columns do not define their own width)
@@ -240,18 +253,14 @@ namespace NPOI.SS.UserModel
         /// Call <see cref="NPOI.SS.UserModel.IRow.RowNum"/> on each row 
         /// if you care which one it is.
         /// </returns>
-        System.Collections.IEnumerator GetRowEnumerator();
+        IEnumerator GetRowEnumerator();
+
 
         /// <summary>
-        /// Alias for GetRowEnumerator() to allow <c>foreach</c> loops.
+        /// Get the row enumerator
         /// </summary>
-        /// <returns>
-        /// an iterator of the PHYSICAL rows.  Meaning the 3rd element may not
-        /// be the third row if say for instance the second row is undefined.
-        /// Call <see cref="NPOI.SS.UserModel.IRow.RowNum"/> on each row 
-        /// if you care which one it is.
-        /// </returns>
-        System.Collections.IEnumerator GetEnumerator();
+        /// <returns></returns>
+        IEnumerator GetEnumerator();
 
         /// <summary>
         /// Gets the flag indicating whether the window should show 0 (zero) in cells Containing zero value.
@@ -413,6 +422,12 @@ namespace NPOI.SS.UserModel
         /// <value>the rownum (0 based) of the top row</value>
         short LeftCol { get; set; }
 
+        /// <summary>
+        /// Sets desktop window pane display area, when the file is first opened in a viewer.
+        /// </summary>
+        /// <param name="toprow">the top row to show in desktop window pane</param>
+        /// <param name="leftcol">the left column to show in desktop window pane</param>
+        void ShowInPane(int toprow, int leftcol);
         /// <summary>
         /// Sets desktop window pane display area, when the
         /// file is first opened in a viewer.
@@ -684,7 +699,7 @@ namespace NPOI.SS.UserModel
         /// <summary>
         /// Sets whether sheet is selected.
         /// </summary>
-        /// <param name="sel">Whether to select the sheet or deselect the sheet.</param> 
+        /// <param name="value">Whether to select the sheet or deselect the sheet.</param> 
         void SetActive(bool value);
 
         /// <summary>
@@ -714,6 +729,12 @@ namespace NPOI.SS.UserModel
         /// </summary>
         /// <returns>Instance of a DataValidationHelper</returns>
         IDataValidationHelper GetDataValidationHelper();
+
+        /// <summary>
+        /// Returns the list of DataValidation in the sheet.
+        /// </summary>
+        /// <returns>list of DataValidation in the sheet</returns>
+        List<IDataValidation> GetDataValidations();
 
         /// <summary>
         /// Creates a data validation object
@@ -787,6 +808,15 @@ namespace NPOI.SS.UserModel
         /// <param name="copyStyle">whether to copy styles</param>
         /// <returns>cloned sheet</returns>
         ISheet CopySheet(String Name, Boolean copyStyle);
+
+        /// <summary>
+        /// Returns the column outline level. Increased as you
+        /// put it into more groups (outlines), reduced as
+        /// you take it out of them.
+        /// </summary>
+        /// <param name="columnIndex"></param>
+        /// <returns></returns>
+        int GetColumnOutlineLevel(int columnIndex);
     }
 
 }

@@ -22,6 +22,7 @@ namespace TestCases.SS.UserModel
     using NPOI.SS.Util;
     using TestCases.SS;
     using NPOI.SS.UserModel;
+    using System.Text;
 
     /**
      * @author Yegor Kozlov
@@ -53,9 +54,11 @@ namespace TestCases.SS.UserModel
                 wb.GetSheetAt(0);
                 Assert.Fail("should have thrown exceptiuon due to invalid sheet index");
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
                 // expected during successful Test
+                // no negative index in the range message
+                Assert.IsFalse(ex.Message.Contains("-1"));
             }
 
             ISheet sheet0 = wb.CreateSheet();
@@ -211,24 +214,55 @@ namespace TestCases.SS.UserModel
         public void TestRemoveSheetAt()
         {
             IWorkbook workbook = _testDataProvider.CreateWorkbook();
-            workbook.CreateSheet("sheet1");
-            workbook.CreateSheet("sheet2");
-            workbook.CreateSheet("sheet3");
-            Assert.AreEqual(3, workbook.NumberOfSheets);
-            workbook.RemoveSheetAt(1);
-            Assert.AreEqual(2, workbook.NumberOfSheets);
-            Assert.AreEqual("sheet3", workbook.GetSheetName(1));
-            workbook.RemoveSheetAt(0);
-            Assert.AreEqual(1, workbook.NumberOfSheets);
-            Assert.AreEqual("sheet3", workbook.GetSheetName(0));
-            workbook.RemoveSheetAt(0);
-            Assert.AreEqual(0, workbook.NumberOfSheets);
+            try
+            {
+                workbook.CreateSheet("sheet1");
+                workbook.CreateSheet("sheet2");
+                workbook.CreateSheet("sheet3");
+                Assert.AreEqual(3, workbook.NumberOfSheets);
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+                workbook.RemoveSheetAt(1);
+                Assert.AreEqual(2, workbook.NumberOfSheets);
+                Assert.AreEqual("sheet3", workbook.GetSheetName(1));
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+                workbook.RemoveSheetAt(0);
+                Assert.AreEqual(1, workbook.NumberOfSheets);
+                Assert.AreEqual("sheet3", workbook.GetSheetName(0));
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+                workbook.RemoveSheetAt(0);
+                Assert.AreEqual(0, workbook.NumberOfSheets);
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
 
-            //re-create the sheets
-            workbook.CreateSheet("sheet1");
-            workbook.CreateSheet("sheet2");
-            workbook.CreateSheet("sheet3");
-            Assert.AreEqual(3, workbook.NumberOfSheets);
+                //re-create the sheets
+                workbook.CreateSheet("sheet1");
+                workbook.CreateSheet("sheet2");
+                workbook.CreateSheet("sheet3");
+                Assert.AreEqual(3, workbook.NumberOfSheets);
+
+                workbook.CreateSheet("sheet4");
+                Assert.AreEqual(4, workbook.NumberOfSheets);
+
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+                workbook.SetActiveSheet(2);
+                Assert.AreEqual(2, workbook.ActiveSheetIndex);
+
+                workbook.RemoveSheetAt(2);
+                Assert.AreEqual(2, workbook.ActiveSheetIndex);
+
+                workbook.RemoveSheetAt(1);
+                Assert.AreEqual(1, workbook.ActiveSheetIndex);
+
+                workbook.RemoveSheetAt(0);
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+
+                workbook.RemoveSheetAt(0);
+                Assert.AreEqual(0, workbook.ActiveSheetIndex);
+            }
+            finally
+            {
+                workbook.Close();
+            }
+
         }
 
         [Test]
@@ -316,10 +350,16 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual(8, wb.GetSheetIndex("Sheet 8"));
             Assert.AreEqual(9, wb.GetSheetIndex("Sheet 9"));
 
+            // check active sheet
+            Assert.AreEqual(0, wb.ActiveSheetIndex);
+
             // Change
             wb.SetSheetOrder("Sheet 6", 0);
+            Assert.AreEqual(1, wb.ActiveSheetIndex);
             wb.SetSheetOrder("Sheet 3", 7);
             wb.SetSheetOrder("Sheet 1", 9);
+            // now the first sheet is at index 1
+            Assert.AreEqual(1, wb.ActiveSheetIndex);
 
             // Check they're currently right
             Assert.AreEqual(0, wb.GetSheetIndex("Sheet 6"));
@@ -345,6 +385,8 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual(7, wbr.GetSheetIndex("Sheet 8"));
             Assert.AreEqual(8, wbr.GetSheetIndex("Sheet 9"));
             Assert.AreEqual(9, wbr.GetSheetIndex("Sheet 1"));
+
+            Assert.AreEqual(1, wb.ActiveSheetIndex);
 
             // Now Get the index by the sheet, not the name
             for (int i = 0; i < 10; i++)
@@ -661,6 +703,20 @@ namespace TestCases.SS.UserModel
                 ICell cellB = sheet.GetRow(1).GetCell(1);
 
                 Assert.AreEqual(cellB.StringCellValue, Evaluator.Evaluate(cellA).StringValue);
+            }
+        }
+
+        protected void assertSheetOrder(IWorkbook wb, params String[] sheets)
+        {
+            StringBuilder sheetNames = new StringBuilder();
+            for (int i = 0; i < wb.NumberOfSheets; i++)
+            {
+                sheetNames.Append(wb.GetSheetAt(i).SheetName).Append(",");
+            }
+            Assert.AreEqual(sheets.Length, wb.NumberOfSheets, "Had: " + sheetNames.ToString());
+            for (int i = 0; i < wb.NumberOfSheets; i++)
+            {
+                Assert.AreEqual(sheets[i], wb.GetSheetAt(i).SheetName, "Had: " + sheetNames.ToString());
             }
         }
     }

@@ -92,7 +92,7 @@ namespace NPOI.XSSF.UserModel
                 foreach (CT_RElt r in st.r)
                 {
                     CT_RPrElt pr = r.rPr;
-                    if (pr != null && pr.sizeOfRFontArray() > 0)
+                    if (pr != null && pr.SizeOfRFontArray() > 0)
                     {
                         String fontName = pr.GetRFontArray(0).val;
                         if (fontName.StartsWith("#"))
@@ -194,9 +194,9 @@ namespace NPOI.XSSF.UserModel
         public void ApplyFont(int startIndex, int endIndex, IFont font)
         {
             if (startIndex > endIndex)
-                throw new ArgumentException("Start index must be less than end index.");
+                throw new ArgumentException("Start index must be less than end index, but had " + startIndex + " and " + endIndex);
             if (startIndex < 0 || endIndex > Length)
-                throw new ArgumentException("Start and end index not in range.");
+                throw new ArgumentException("Start and end index not in range, but had " + startIndex + " and " + endIndex);
             if (startIndex == endIndex)
                 return;
 
@@ -304,7 +304,7 @@ namespace NPOI.XSSF.UserModel
          */
         private void SetRunAttributes(CT_Font ctFont, CT_RPrElt pr)
         {
-            if (ctFont.sizeOfBArray() > 0) pr.AddNewB().val = (ctFont.GetBArray(0).val);
+            if (ctFont.SizeOfBArray() > 0) pr.AddNewB().val = (ctFont.GetBArray(0).val);
             if (ctFont.sizeOfUArray() > 0) pr.AddNewU().val =(ctFont.GetUArray(0).val);
             if (ctFont.sizeOfIArray() > 0) pr.AddNewI().val =(ctFont.GetIArray(0).val);
             if (ctFont.sizeOfColorArray() > 0)
@@ -390,14 +390,13 @@ namespace NPOI.XSSF.UserModel
          */
         public int GetLengthOfFormattingRun(int index)
         {
-            if (st.sizeOfRArray() == 0) return this.Length;
-
-            for (int i = 0; i < st.sizeOfRArray(); i++)
+            if (st.sizeOfRArray() == 0 || index >= st.sizeOfRArray())
             {
-                CT_RElt r = st.GetRArray(i);
-                if (i == index) return r.t.Length;
+                return -1;
             }
-            return -1;
+
+            CT_RElt r = st.GetRArray(index);
+            return r.t.Length;
         }
 
         public String String
@@ -462,17 +461,14 @@ namespace NPOI.XSSF.UserModel
          */
         public IFont GetFontOfFormattingRun(int index)
         {
-            if (st.sizeOfRArray() == 0) return null;
+            if (st.sizeOfRArray() == 0 || index >= st.sizeOfRArray()) return null;
 
-            for (int i = 0; i < st.sizeOfRArray(); i++)
+            CT_RElt r = st.GetRArray(index);
+            if (r.rPr != null)
             {
-                CT_RElt r = st.GetRArray(i);
-                if (i == index)
-                {
-                    XSSFFont fnt = new XSSFFont(ToCTFont(r.rPr));
-                    fnt.SetThemesTable(GetThemesTable());
-                    return fnt;
-                }
+                XSSFFont fnt = new XSSFFont(ToCTFont(r.rPr));
+                fnt.SetThemesTable(GetThemesTable());
+                return fnt;
             }
             return null;
         }
@@ -485,9 +481,9 @@ namespace NPOI.XSSF.UserModel
          *                      index or null if no font is being applied or the
          *                      index is out of range.
          */
-        public short GetFontAtIndex(int index)
+        public XSSFFont GetFontAtIndex(int index)
         {
-            if (st.sizeOfRArray() == 0) return -1;
+            if (st.sizeOfRArray() == 0) return null;
 
             int pos = 0;
             for (int i = 0; i < st.sizeOfRArray(); i++)
@@ -497,12 +493,12 @@ namespace NPOI.XSSF.UserModel
                 {
                     XSSFFont fnt = new XSSFFont(ToCTFont(r.rPr));
                     fnt.SetThemesTable(GetThemesTable());
-                    return fnt.Index;
+                    return fnt;
                 }
 
                 pos += r.t.Length;
             }
-            return -1;
+            return null;
 
         }
 
@@ -524,10 +520,10 @@ namespace NPOI.XSSF.UserModel
         {
             CT_Font ctFont = new CT_Font();
 
-            if (pr.sizeOfBArray() > 0) ctFont.AddNewB().val = (pr.GetBArray(0).val);
-            if (pr.sizeOfUArray() > 0) ctFont.AddNewU().val = (pr.GetUArray(0).val);
-            if (pr.sizeOfIArray() > 0) ctFont.AddNewI().val = (pr.GetIArray(0).val);
-            if (pr.sizeOfColorArray() > 0)
+            if (pr.SizeOfBArray() > 0) ctFont.AddNewB().val = (pr.GetBArray(0).val);
+            if (pr.SizeOfUArray() > 0) ctFont.AddNewU().val = (pr.GetUArray(0).val);
+            if (pr.SizeOfIArray() > 0) ctFont.AddNewI().val = (pr.GetIArray(0).val);
+            if (pr.SizeOfColorArray() > 0)
             {
                 CT_Color c1 = pr.GetColorArray(0);
                 CT_Color c2 = ctFont.AddNewColor();
@@ -558,9 +554,9 @@ namespace NPOI.XSSF.UserModel
                 }
             }
  
-            if (pr.sizeOfSzArray() > 0) ctFont.AddNewSz().val = (pr.GetSzArray(0).val);
-            if (pr.sizeOfRFontArray() > 0) ctFont.AddNewName().val = (pr.GetRFontArray(0).val);
-            if (pr.sizeOfFamilyArray() > 0) ctFont.AddNewFamily().val = (pr.GetFamilyArray(0).val);
+            if (pr.SizeOfSzArray() > 0) ctFont.AddNewSz().val = (pr.GetSzArray(0).val);
+            if (pr.SizeOfRFontArray() > 0) ctFont.AddNewName().val = (pr.GetRFontArray(0).val);
+            if (pr.SizeOfFamilyArray() > 0) ctFont.AddNewFamily().val = (pr.GetFamilyArray(0).val);
             if (pr.sizeOfSchemeArray() > 0) ctFont.AddNewScheme().val = (pr.GetSchemeArray(0).val);
             if (pr.sizeOfCharsetArray() > 0) ctFont.AddNewCharset().val = (pr.GetCharsetArray(0).val);
             if (pr.sizeOfCondenseArray() > 0) ctFont.AddNewCondense().val = (pr.GetCondenseArray(0).val);

@@ -262,10 +262,13 @@ namespace TestCases.HSSF.UserModel
             Assert.AreNotEqual(18, clone.DataFormat);
 
             clone.CloneStyleFrom(orig);
-            Assert.AreEqual(HorizontalAlignment.Right, clone.Alignment);
-            Assert.AreEqual(fnt , clone.GetFont(wb));
-            Assert.AreEqual(18,clone.DataFormat);
+            Assert.AreEqual(HorizontalAlignment.Right, orig.Alignment);
+            Assert.AreEqual(fnt, clone.GetFont(wb));
+            Assert.AreEqual(18, clone.DataFormat);
             Assert.AreEqual(5, wb.NumberOfFonts);
+
+            orig.Alignment = HorizontalAlignment.Left;
+            Assert.AreEqual(HorizontalAlignment.Right, clone.Alignment);
         }
 
         /**
@@ -365,6 +368,82 @@ namespace TestCases.HSSF.UserModel
             ICell c4 = s.GetRow(0).CreateCell(1);
             c4.CellStyle = (cs2);
             Assert.AreEqual("style1", ((HSSFCellStyle)c4.CellStyle).ParentStyle.UserStyleName);
+        }
+
+        [Test]
+        public void TestGetSetBorderHair()
+        {
+            HSSFWorkbook wb = OpenSample("55341_CellStyleBorder.xls");
+            ISheet s = wb.GetSheetAt(0);
+            ICellStyle cs;
+
+            cs = s.GetRow(0).GetCell(0).CellStyle;
+            Assert.AreEqual(BorderStyle.Hair, cs.BorderRight);
+
+            cs = s.GetRow(1).GetCell(1).CellStyle;
+            Assert.AreEqual(BorderStyle.Dotted, cs.BorderRight);
+
+            cs = s.GetRow(2).GetCell(2).CellStyle;
+            Assert.AreEqual(BorderStyle.DashDotDot, cs.BorderRight);
+
+            cs = s.GetRow(3).GetCell(3).CellStyle;
+            Assert.AreEqual(BorderStyle.Dashed, cs.BorderRight);
+
+            cs = s.GetRow(4).GetCell(4).CellStyle;
+            Assert.AreEqual(BorderStyle.Thin, cs.BorderRight);
+
+            cs = s.GetRow(5).GetCell(5).CellStyle;
+            Assert.AreEqual(BorderStyle.MediumDashDotDot, cs.BorderRight);
+
+            cs = s.GetRow(6).GetCell(6).CellStyle;
+            Assert.AreEqual(BorderStyle.SlantedDashDot, cs.BorderRight);
+
+            cs = s.GetRow(7).GetCell(7).CellStyle;
+            Assert.AreEqual(BorderStyle.MediumDashDot, cs.BorderRight);
+
+            cs = s.GetRow(8).GetCell(8).CellStyle;
+            Assert.AreEqual(BorderStyle.MediumDashed, cs.BorderRight);
+
+            cs = s.GetRow(9).GetCell(9).CellStyle;
+            Assert.AreEqual(BorderStyle.Medium, cs.BorderRight);
+
+            cs = s.GetRow(10).GetCell(10).CellStyle;
+            Assert.AreEqual(BorderStyle.Thick, cs.BorderRight);
+
+            cs = s.GetRow(11).GetCell(11).CellStyle;
+            Assert.AreEqual(BorderStyle.Double, cs.BorderRight);
+        }
+
+        [Test]
+        public void TestShrinkToFit()
+        {
+            // Existing file
+            IWorkbook wb = OpenSample("ShrinkToFit.xls");
+            ISheet s = wb.GetSheetAt(0);
+            IRow r = s.GetRow(0);
+            ICellStyle cs = r.GetCell(0).CellStyle;
+
+            Assert.AreEqual(true, cs.ShrinkToFit);
+
+            // New file
+            IWorkbook wbOrig = new HSSFWorkbook();
+            s = wbOrig.CreateSheet();
+            r = s.CreateRow(0);
+
+            cs = wbOrig.CreateCellStyle();
+            cs.ShrinkToFit = (/*setter*/false);
+            r.CreateCell(0).CellStyle = (/*setter*/cs);
+
+            cs = wbOrig.CreateCellStyle();
+            cs.ShrinkToFit = (/*setter*/true);
+            r.CreateCell(1).CellStyle = (/*setter*/cs);
+
+            // Write out1, Read, and check
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wbOrig as HSSFWorkbook);
+            s = wb.GetSheetAt(0);
+            r = s.GetRow(0);
+            Assert.AreEqual(false, r.GetCell(0).CellStyle.ShrinkToFit);
+            Assert.AreEqual(true, r.GetCell(1).CellStyle.ShrinkToFit);
         }
     }
 }

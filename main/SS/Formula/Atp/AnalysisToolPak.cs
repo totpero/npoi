@@ -39,9 +39,9 @@ namespace NPOI.SS.Formula.Atp
 
         public ValueEval Evaluate(ValueEval[] args, OperationEvaluationContext ec)
         {
-            throw new NotImplementedException(_functionName);
+            throw new NotImplementedFunctionException(_functionName);
         }
-    };
+    }
 
     public class AnalysisToolPak : UDFFinder
     {
@@ -78,10 +78,10 @@ namespace NPOI.SS.Formula.Atp
             r(m, "BESSELJ", null);
             r(m, "BESSELK", null);
             r(m, "BESSELY", null);
-            r(m, "BIN2DEC", null);
+            r(m, "BIN2DEC", Bin2Dec.instance);
             r(m, "BIN2HEX", null);
             r(m, "BIN2OCT", null);
-            r(m, "COMPLEX", null);
+            r(m, "COMPLEX", Complex.Instance);
             r(m, "CONVERT", null);
             r(m, "COUNTIFS", null);
             r(m, "COUPDAYBS", null);
@@ -99,29 +99,29 @@ namespace NPOI.SS.Formula.Atp
             r(m, "CUBEVALUE", null);
             r(m, "CUMIPMT", null);
             r(m, "CUMPRINC", null);
-            r(m, "DEC2BIN", null);
-            r(m, "DEC2HEX", null);
+            r(m, "DEC2BIN", Dec2Bin.instance);
+            r(m, "DEC2HEX", Dec2Hex.instance);
             r(m, "DEC2OCT", null);
-            r(m, "DELTA", null);
+            r(m, "DELTA", Delta.instance);
             r(m, "DISC", null);
             r(m, "DOLLARDE", null);
             r(m, "DOLLARFR", null);
             r(m, "DURATION", null);
             r(m, "EDATE", EDate.Instance);
             r(m, "EFFECT", null);
-            r(m, "EOMONTH", null);
+            r(m, "EOMONTH", EOMonth.instance);
             r(m, "ERF", null);
             r(m, "ERFC", null);
-            r(m, "FACTDOUBLE", null);
+            r(m, "FACTDOUBLE", FactDouble.instance);
             r(m, "FVSCHEDULE", null);
             r(m, "GCD", null);
             r(m, "GESTEP", null);
             r(m, "HEX2BIN", null);
-            r(m, "HEX2DEC", null);
+            r(m, "HEX2DEC", Hex2Dec.instance);
             r(m, "HEX2OCT", null);
-            r(m, "IFERROR", null);
+            r(m, "IFERROR", IfError.Instance);
             r(m, "IMABS", null);
-            r(m, "IMAGINARY", null);
+            r(m, "IMAGINARY", Imaginary.instance);
             r(m, "IMARGUMENT", null);
             r(m, "IMCONJUGATE", null);
             r(m, "IMCOS", null);
@@ -132,7 +132,7 @@ namespace NPOI.SS.Formula.Atp
             r(m, "IMLOG2", null);
             r(m, "IMPOWER", null);
             r(m, "IMPRODUCT", null);
-            r(m, "IMREAL", null);
+            r(m, "IMREAL", ImReal.instance);
             r(m, "IMSIN", null);
             r(m, "IMSQRT", null);
             r(m, "IMSUB", null);
@@ -148,7 +148,7 @@ namespace NPOI.SS.Formula.Atp
             r(m, "NETWORKDAYS", NetworkdaysFunction.instance);
             r(m, "NOMINAL", null);
             r(m, "OCT2BIN", null);
-            r(m, "OCT2DEC", null);
+            r(m, "OCT2DEC", Oct2Dec.instance);
             r(m, "OCT2HEX", null);
             r(m, "ODDFPRICE", null);
             r(m, "ODDFYIELD", null);
@@ -157,7 +157,7 @@ namespace NPOI.SS.Formula.Atp
             r(m, "PRICE", null);
             r(m, "PRICEDISC", null);
             r(m, "PRICEMAT", null);
-            r(m, "QUOTIENT", null);
+            r(m, "QUOTIENT", Quotient.instance);
             r(m, "RANDBETWEEN", RandBetween.Instance);
             r(m, "RECEIVED", null);
             r(m, "RTD", null);
@@ -167,7 +167,7 @@ namespace NPOI.SS.Formula.Atp
             r(m, "TBILLEQ", null);
             r(m, "TBILLPRICE", null);
             r(m, "TBILLYIELD", null);
-            r(m, "WEEKNUM", null);
+            r(m, "WEEKNUM", WeekNum.instance);
             r(m, "WORKDAY", WorkdayFunction.instance);
             r(m, "XIRR", null);
             r(m, "XNPV", null);
@@ -175,7 +175,7 @@ namespace NPOI.SS.Formula.Atp
             r(m, "YIELD", null);
             r(m, "YIELDDISC", null);
             r(m, "YIELDMAT", null);
-
+            r(m, "COUNTIFS", Countifs.instance);
             return m;
         }
 

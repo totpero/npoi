@@ -339,7 +339,8 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "calcId", this.calcId);
-            XmlHelper.WriteAttribute(sw, "calcMode", this.calcMode.ToString());
+            if(calcMode== ST_CalcMode.auto)
+                XmlHelper.WriteAttribute(sw, "calcMode", this.calcMode.ToString());
             XmlHelper.WriteAttribute(sw, "fullCalcOnLoad", this.fullCalcOnLoad);
             XmlHelper.WriteAttribute(sw, "refMode", this.refMode.ToString());
             XmlHelper.WriteAttribute(sw, "iterate", this.iterate);
@@ -351,8 +352,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "concurrentCalc", this.concurrentCalc);
             XmlHelper.WriteAttribute(sw, "concurrentManualCount", this.concurrentManualCount);
             XmlHelper.WriteAttribute(sw, "forceFullCalc", this.forceFullCalc);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
         public CT_CalcPr()
@@ -641,8 +641,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "lockStructure", this.lockStructure);
             XmlHelper.WriteAttribute(sw, "lockWindows", this.lockWindows);
             XmlHelper.WriteAttribute(sw, "lockRevision", this.lockRevision);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
         public CT_WorkbookProtection()
@@ -773,12 +772,12 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             ctObj.date1904Specified = node.Attributes["date1904"]!=null;
             if (node.Attributes["showObjects"] != null)
                 ctObj.showObjects = (ST_Objects)Enum.Parse(typeof(ST_Objects), node.Attributes["showObjects"].Value);
-            ctObj.showBorderUnselectedTables = XmlHelper.ReadBool(node.Attributes["showBorderUnselectedTables"]);
+            ctObj.showBorderUnselectedTables = XmlHelper.ReadBool(node.Attributes["showBorderUnselectedTables"], true);
             ctObj.filterPrivacy = XmlHelper.ReadBool(node.Attributes["filterPrivacy"]);
             ctObj.promptedSolutions = XmlHelper.ReadBool(node.Attributes["promptedSolutions"]);
-            ctObj.showInkAnnotation = XmlHelper.ReadBool(node.Attributes["showInkAnnotation"]);
+            ctObj.showInkAnnotation = XmlHelper.ReadBool(node.Attributes["showInkAnnotation"], true);
             ctObj.backupFile = XmlHelper.ReadBool(node.Attributes["backupFile"]);
-            ctObj.saveExternalLinkValues = XmlHelper.ReadBool(node.Attributes["saveExternalLinkValues"]);
+            ctObj.saveExternalLinkValues = XmlHelper.ReadBool(node.Attributes["saveExternalLinkValues"], true);
             if (node.Attributes["updateLinks"] != null)
                 ctObj.updateLinks = (ST_UpdateLinks)Enum.Parse(typeof(ST_UpdateLinks), node.Attributes["updateLinks"].Value);
             ctObj.codeName = XmlHelper.ReadString(node.Attributes["codeName"]);
@@ -787,7 +786,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             ctObj.allowRefreshQuery = XmlHelper.ReadBool(node.Attributes["allowRefreshQuery"]);
             ctObj.publishItems = XmlHelper.ReadBool(node.Attributes["publishItems"]);
             ctObj.checkCompatibility = XmlHelper.ReadBool(node.Attributes["checkCompatibility"]);
-            ctObj.autoCompressPictures = XmlHelper.ReadBool(node.Attributes["autoCompressPictures"]);
+            ctObj.autoCompressPictures = XmlHelper.ReadBool(node.Attributes["autoCompressPictures"], true);
             ctObj.refreshAllConnections = XmlHelper.ReadBool(node.Attributes["refreshAllConnections"]);
             ctObj.defaultThemeVersion = XmlHelper.ReadUInt(node.Attributes["defaultThemeVersion"]);
             return ctObj;
@@ -801,12 +800,15 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "date1904", this.date1904, false);
             if(this.showObjects!= ST_Objects.all)
                 XmlHelper.WriteAttribute(sw, "showObjects", this.showObjects.ToString());
-            XmlHelper.WriteAttribute(sw, "showBorderUnselectedTables", this.showBorderUnselectedTables,false);
+            if (!showBorderUnselectedTables)
+                XmlHelper.WriteAttribute(sw, "showBorderUnselectedTables", this.showBorderUnselectedTables);
             XmlHelper.WriteAttribute(sw, "filterPrivacy", this.filterPrivacy, false);
             XmlHelper.WriteAttribute(sw, "promptedSolutions", this.promptedSolutions, false);
-            XmlHelper.WriteAttribute(sw, "showInkAnnotation", this.showInkAnnotation,false);
+            if (!showInkAnnotationField)
+                XmlHelper.WriteAttribute(sw, "showInkAnnotation", this.showInkAnnotation, false);
             XmlHelper.WriteAttribute(sw, "backupFile", this.backupFile, false);
-            XmlHelper.WriteAttribute(sw, "saveExternalLinkValues", this.saveExternalLinkValues, false);
+            if (!saveExternalLinkValues)
+                XmlHelper.WriteAttribute(sw, "saveExternalLinkValues", this.saveExternalLinkValues);
             if(this.updateLinks!= ST_UpdateLinks.userSet)
                 XmlHelper.WriteAttribute(sw, "updateLinks", this.updateLinks.ToString());
             XmlHelper.WriteAttribute(sw, "codeName", this.codeName);
@@ -818,8 +820,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "autoCompressPictures", this.autoCompressPictures, false);
             XmlHelper.WriteAttribute(sw, "refreshAllConnections", this.refreshAllConnections, false);
             XmlHelper.WriteAttribute(sw, "defaultThemeVersion", this.defaultThemeVersion);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
         public CT_WorkbookPr()

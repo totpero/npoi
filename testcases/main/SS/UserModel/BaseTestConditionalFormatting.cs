@@ -27,6 +27,7 @@ namespace TestCases.SS.UserModel
     using NPOI.SS.Util;
     using TestCases.SS;
     using NPOI.HSSF.Record.CF;
+    using NPOI.HSSF.Util;
 
     /**
      * @author Dmitriy Kumshayev
@@ -330,7 +331,7 @@ namespace TestCases.SS.UserModel
             bordFmt.BorderRight = (/*setter*/BorderStyle.Dotted);
 
             IPatternFormatting patternFmt = rule1.CreatePatternFormatting();
-            patternFmt.FillBackgroundColor = (/*setter*/IndexedColors.Yellow.Index);
+            patternFmt.FillBackgroundColor = (/*setter*/HSSFColor.Yellow.Index);
 
 
             IConditionalFormattingRule rule2 = sheetCF.CreateConditionalFormattingRule(ComparisonOperator.Between, "1", "2");
@@ -384,7 +385,7 @@ namespace TestCases.SS.UserModel
 
             IPatternFormatting r1pf = rule1.GetPatternFormatting();
             Assert.IsNotNull(r1pf);
-            //        Assert.AreEqual(IndexedColors.Yellow.index,r1pf.FillBackgroundColor);
+            //        Assert.AreEqual(HSSFColor.Yellow.index,r1pf.FillBackgroundColor);
 
             rule2 = cf.GetRule(1);
             Assert.AreEqual("2", rule2.Formula2);
@@ -405,7 +406,7 @@ namespace TestCases.SS.UserModel
             fontFmt.SetFontStyle(true, false);
 
             IPatternFormatting patternFmt = rule1.CreatePatternFormatting();
-            patternFmt.FillBackgroundColor = (/*setter*/IndexedColors.Yellow.Index);
+            patternFmt.FillBackgroundColor = (/*setter*/HSSFColor.Yellow.Index);
 
 
             IConditionalFormattingRule rule2 = sheetCF.CreateConditionalFormattingRule(ComparisonOperator.Between, "1", "2");
@@ -450,31 +451,45 @@ namespace TestCases.SS.UserModel
             fontFmt.SetFontStyle(true, false);
 
             IPatternFormatting patternFmt = rule1.CreatePatternFormatting();
-            patternFmt.FillBackgroundColor = (/*setter*/IndexedColors.Yellow.Index);
-            IConditionalFormattingRule[] cfRules = { rule1, };
+            patternFmt.FillBackgroundColor = (/*setter*/HSSFColor.Yellow.Index);
+
+            IConditionalFormattingRule rule2 = sheetCF.CreateConditionalFormattingRule(
+                ComparisonOperator.Between, "SUM(A10:A15)", "1+SUM(B16:B30)");
+            IBorderFormatting borderFmt = rule2.CreateBorderFormatting();
+            borderFmt.BorderDiagonal= BorderStyle.Medium;
+
 
             CellRangeAddress[] regions = {
             new CellRangeAddress(2, 4, 0, 0), // A3:A5
         };
-            sheetCF.AddConditionalFormatting(regions, cfRules);
+            sheetCF.AddConditionalFormatting(regions, rule1);
+            sheetCF.AddConditionalFormatting(regions, rule2);
 
             // This row-shift should destroy the CF region
             sheet.ShiftRows(10, 20, -9);
             Assert.AreEqual(0, sheetCF.NumConditionalFormattings);
 
             // re-add the CF
-            sheetCF.AddConditionalFormatting(regions, cfRules);
+            sheetCF.AddConditionalFormatting(regions, rule1);
+            sheetCF.AddConditionalFormatting(regions, rule2);
 
             // This row shift should only affect the formulas
             sheet.ShiftRows(14, 17, 8);
-            IConditionalFormatting cf = sheetCF.GetConditionalFormattingAt(0);
-            Assert.AreEqual("SUM(A10:A23)", cf.GetRule(0).Formula1);
-            Assert.AreEqual("1+SUM(B24:B30)", cf.GetRule(0).Formula2);
+            IConditionalFormatting cf1 = sheetCF.GetConditionalFormattingAt(0);
+            Assert.AreEqual("SUM(A10:A23)", cf1.GetRule(0).Formula1);
+            Assert.AreEqual("1+SUM(B24:B30)", cf1.GetRule(0).Formula2);
+            IConditionalFormatting cf2 = sheetCF.GetConditionalFormattingAt(1);
+            Assert.AreEqual("SUM(A10:A23)", cf2.GetRule(0).Formula1);
+            Assert.AreEqual("1+SUM(B24:B30)", cf2.GetRule(0).Formula2);
 
             sheet.ShiftRows(0, 8, 21);
-            cf = sheetCF.GetConditionalFormattingAt(0);
-            Assert.AreEqual("SUM(A10:A21)", cf.GetRule(0).Formula1);
-            Assert.AreEqual("1+SUM(#REF!)", cf.GetRule(0).Formula2);
+            cf1 = sheetCF.GetConditionalFormattingAt(0);
+            Assert.AreEqual("SUM(A10:A21)", cf1.GetRule(0).Formula1);
+            Assert.AreEqual("1+SUM(#REF!)", cf1.GetRule(0).Formula2);
+            cf2 = sheetCF.GetConditionalFormattingAt(1);
+            Assert.AreEqual("SUM(A10:A21)", cf2.GetRule(0).Formula1);
+            Assert.AreEqual("1+SUM(#REF!)", cf2.GetRule(0).Formula2);
+
         }
         //
         
@@ -504,7 +519,7 @@ namespace TestCases.SS.UserModel
             Assert.IsNull(rule1.GetBorderFormatting());
 
             IFontFormatting fmt1 = rule1.GetFontFormatting();
-            //        Assert.AreEqual(IndexedColors.GREEN.index, fmt1.FontColorIndex);
+            //        Assert.AreEqual(HSSFColor.GREEN.index, fmt1.FontColorIndex);
             Assert.IsTrue(fmt1.IsBold);
             Assert.IsFalse(fmt1.IsItalic);
 
@@ -517,7 +532,7 @@ namespace TestCases.SS.UserModel
             Assert.IsNull(rule2.GetBorderFormatting());
 
             IFontFormatting fmt2 = rule2.GetFontFormatting();
-            //        Assert.AreEqual(IndexedColors.Red.index, fmt2.FontColorIndex);
+            //        Assert.AreEqual(HSSFColor.Red.index, fmt2.FontColorIndex);
             Assert.IsTrue(fmt2.IsBold);
             Assert.IsTrue(fmt2.IsItalic);
 
@@ -535,13 +550,13 @@ namespace TestCases.SS.UserModel
             Assert.IsNull(rule3.Formula2);
 
             IFontFormatting fmt3 = rule3.GetFontFormatting();
-            //        Assert.AreEqual(IndexedColors.Red.index, fmt3.FontColorIndex);
+            //        Assert.AreEqual(HSSFColor.Red.index, fmt3.FontColorIndex);
             Assert.IsTrue(fmt3.IsBold);
             Assert.IsTrue(fmt3.IsItalic);
 
             IPatternFormatting fmt4 = rule3.GetPatternFormatting();
-            //        Assert.AreEqual(IndexedColors.LIGHT_CORNFLOWER_BLUE.index, fmt4.FillBackgroundColor);
-            //        Assert.AreEqual(IndexedColors.Automatic.index, fmt4.FillForegroundColor);
+            //        Assert.AreEqual(HSSFColor.LIGHT_CORNFLOWER_BLUE.index, fmt4.FillBackgroundColor);
+            //        Assert.AreEqual(HSSFColor.Automatic.index, fmt4.FillForegroundColor);
             Assert.AreEqual((short)FillPattern.NoFill, fmt4.FillPattern);
             // borders are not Set
             Assert.IsNull(rule3.GetBorderFormatting());
@@ -604,12 +619,12 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual(FontUnderlineType.Double, fontFmt.UnderlineType);
 
             Assert.AreEqual(-1, fontFmt.FontColorIndex);
-            fontFmt.FontColorIndex = (/*setter*/IndexedColors.Red.Index);
-            Assert.AreEqual(IndexedColors.Red.Index, fontFmt.FontColorIndex);
-            fontFmt.FontColorIndex = (/*setter*/IndexedColors.Automatic.Index);
-            Assert.AreEqual(IndexedColors.Automatic.Index, fontFmt.FontColorIndex);
-            fontFmt.FontColorIndex = (/*setter*/IndexedColors.Blue.Index);
-            Assert.AreEqual(IndexedColors.Blue.Index, fontFmt.FontColorIndex);
+            fontFmt.FontColorIndex = (/*setter*/HSSFColor.Red.Index);
+            Assert.AreEqual(HSSFColor.Red.Index, fontFmt.FontColorIndex);
+            fontFmt.FontColorIndex = (/*setter*/HSSFColor.Automatic.Index);
+            Assert.AreEqual(HSSFColor.Automatic.Index, fontFmt.FontColorIndex);
+            fontFmt.FontColorIndex = (/*setter*/HSSFColor.Blue.Index);
+            Assert.AreEqual(HSSFColor.Blue.Index, fontFmt.FontColorIndex);
 
             IConditionalFormattingRule[] cfRules = { rule1 };
 
@@ -630,7 +645,7 @@ namespace TestCases.SS.UserModel
             Assert.IsTrue(r1fp.IsBold);
             Assert.AreEqual(FontSuperScript.Super, r1fp.EscapementType);
             Assert.AreEqual(FontUnderlineType.Double, r1fp.UnderlineType);
-            Assert.AreEqual(IndexedColors.Blue.Index, r1fp.FontColorIndex);
+            Assert.AreEqual(HSSFColor.Blue.Index, r1fp.FontColorIndex);
 
         }
         [Test]
@@ -645,12 +660,12 @@ namespace TestCases.SS.UserModel
             IPatternFormatting patternFmt = rule1.CreatePatternFormatting();
 
             Assert.AreEqual(0, patternFmt.FillBackgroundColor);
-            patternFmt.FillBackgroundColor = (/*setter*/IndexedColors.Red.Index);
-            Assert.AreEqual(IndexedColors.Red.Index, patternFmt.FillBackgroundColor);
+            patternFmt.FillBackgroundColor = (/*setter*/HSSFColor.Red.Index);
+            Assert.AreEqual(HSSFColor.Red.Index, patternFmt.FillBackgroundColor);
 
             Assert.AreEqual(0, patternFmt.FillForegroundColor);
-            patternFmt.FillForegroundColor = (/*setter*/IndexedColors.Blue.Index);
-            Assert.AreEqual(IndexedColors.Blue.Index, patternFmt.FillForegroundColor);
+            patternFmt.FillForegroundColor = (/*setter*/HSSFColor.Blue.Index);
+            Assert.AreEqual(HSSFColor.Blue.Index, patternFmt.FillForegroundColor);
 
             Assert.AreEqual((short)FillPattern.NoFill, patternFmt.FillPattern);
             patternFmt.FillPattern = (short)FillPattern.SolidForeground;
@@ -678,8 +693,8 @@ namespace TestCases.SS.UserModel
             IPatternFormatting r1fp = cf.GetRule(0).GetPatternFormatting();
             Assert.IsNotNull(r1fp);
 
-            Assert.AreEqual(IndexedColors.Red.Index, r1fp.FillBackgroundColor);
-            Assert.AreEqual(IndexedColors.Blue.Index, r1fp.FillForegroundColor);
+            Assert.AreEqual(HSSFColor.Red.Index, r1fp.FillBackgroundColor);
+            Assert.AreEqual(HSSFColor.Blue.Index, r1fp.FillForegroundColor);
             if (this._testDataProvider.GetSpreadsheetVersion() == SpreadsheetVersion.EXCEL97)
             {
                 Assert.AreEqual((short)FillPattern.Bricks, r1fp.FillPattern);
@@ -747,6 +762,17 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual(BorderStyle.Thin, r1fp.BorderLeft);
             Assert.AreEqual(BorderStyle.Hair, r1fp.BorderRight);
 
+        }
+        [Test]
+        public void TestBug55380()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sheet = wb.CreateSheet();
+            CellRangeAddress[] ranges = new CellRangeAddress[] {
+            CellRangeAddress.ValueOf("C9:D30"), CellRangeAddress.ValueOf("C7:C31")
+        };
+            IConditionalFormattingRule rule = sheet.SheetConditionalFormatting.CreateConditionalFormattingRule("$A$1>0");
+            sheet.SheetConditionalFormatting.AddConditionalFormatting(ranges, rule);
         }
     }
 

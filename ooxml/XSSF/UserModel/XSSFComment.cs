@@ -21,6 +21,7 @@ using NPOI.OpenXmlFormats.Vml;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.Model;
+using NPOI.Util;
 
 namespace NPOI.XSSF.UserModel
 {
@@ -114,9 +115,15 @@ namespace NPOI.XSSF.UserModel
                 _comment.@ref = (newRef);
                 _comments.ReferenceUpdated(oldRef, _comment);
 
-                if (_vmlShape != null) 
-                    _vmlShape.GetClientDataArray(0)
-                        .SetRowArray(0,value);
+                if (_vmlShape != null)
+                {
+                    _vmlShape.GetClientDataArray(0).SetRowArray(0, value);
+
+                    // There is a very odd xmlbeans bug when changing the row
+                    //  arrays which can lead to corrupt pointer
+                    // This call seems to fix them again... See bug #50795
+                    //_vmlShape.getClientDataList().toString();
+                }
             }
         }
 
@@ -198,6 +205,23 @@ namespace NPOI.XSSF.UserModel
         public void SetString(string str)
         {
             this.String = (new XSSFRichTextString(str));
+        }
+
+        public IClientAnchor ClientAnchor
+        {
+            get
+            {
+                String position = _vmlShape.GetClientDataArray(0).GetAnchorArray(0);
+                int[] pos = new int[8];
+                int i = 0;
+                foreach (String s in position.Split(",".ToCharArray()))
+                {
+                    pos[i++] = int.Parse(s.Trim());
+                }
+                XSSFClientAnchor ca = new XSSFClientAnchor(pos[1] * Units.EMU_PER_PIXEL, pos[3] * Units.EMU_PER_PIXEL,
+                    pos[5] * Units.EMU_PER_PIXEL, pos[7] * Units.EMU_PER_PIXEL, pos[0], pos[2], pos[4], pos[6]);
+                return ca;
+            }
         }
 
         /**

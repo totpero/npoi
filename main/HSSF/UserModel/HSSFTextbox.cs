@@ -48,8 +48,8 @@ namespace NPOI.HSSF.UserModel
         public HSSFTextbox(HSSFShape parent, HSSFAnchor anchor)
             : base(parent, anchor)
         {
-            HorizontalAlignment = HorizontalAlignment.Left;
-            VerticalAlignment = VerticalAlignment.Top;
+            HorizontalAlignment = HorizontalTextAlignment.Left;
+            VerticalAlignment = VerticalTextAlignment.Top;
             this.String = (new HSSFRichTextString(""));
         }
 
@@ -119,7 +119,7 @@ namespace NPOI.HSSF.UserModel
 
         internal override void AfterInsert(HSSFPatriarch patriarch)
         {
-            EscherAggregate agg = patriarch.getBoundAggregate();
+            EscherAggregate agg = patriarch.GetBoundAggregate();
             agg.AssociateShapeToObjRecord(GetEscherContainer().GetChildById(EscherClientDataRecord.RECORD_ID), GetObjRecord());
             if (GetTextObjectRecord() != null)
             {
@@ -139,8 +139,8 @@ namespace NPOI.HSSF.UserModel
 
         internal override void AfterRemove(HSSFPatriarch patriarch)
         {
-            patriarch.getBoundAggregate().RemoveShapeToObjRecord(GetEscherContainer().GetChildById(EscherClientDataRecord.RECORD_ID));
-            patriarch.getBoundAggregate().RemoveShapeToObjRecord(GetEscherContainer().GetChildById(EscherTextboxRecord.RECORD_ID));
+            patriarch.GetBoundAggregate().RemoveShapeToObjRecord(GetEscherContainer().GetChildById(EscherClientDataRecord.RECORD_ID));
+            patriarch.GetBoundAggregate().RemoveShapeToObjRecord(GetEscherContainer().GetChildById(EscherTextboxRecord.RECORD_ID));
         }
 
 
@@ -205,7 +205,7 @@ namespace NPOI.HSSF.UserModel
         /// Gets or sets the horizontal alignment.
         /// </summary>
         /// <value>The horizontal alignment.</value>
-        public HorizontalAlignment HorizontalAlignment
+        public HorizontalTextAlignment HorizontalAlignment
         {
             get { return GetTextObjectRecord().HorizontalTextAlignment; }
             set { GetTextObjectRecord().HorizontalTextAlignment = value; }
@@ -215,7 +215,7 @@ namespace NPOI.HSSF.UserModel
         /// Gets or sets the vertical alignment.
         /// </summary>
         /// <value>The vertical alignment.</value>
-        public VerticalAlignment VerticalAlignment
+        public VerticalTextAlignment VerticalAlignment
         {
             get { return GetTextObjectRecord().VerticalTextAlignment; }
             set { GetTextObjectRecord().VerticalTextAlignment = value; }

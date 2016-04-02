@@ -41,9 +41,9 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "locked", this.locked);
-            XmlHelper.WriteAttribute(sw, "hidden", this.hidden);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            if(this.hidden)
+                XmlHelper.WriteAttribute(sw, "hidden", this.hidden);
+            sw.Write("/>");
         }
 
         [XmlAttribute]

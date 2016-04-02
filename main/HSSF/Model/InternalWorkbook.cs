@@ -416,18 +416,10 @@ namespace NPOI.HSSF.Model
         {
             return OrCreateLinkTable.GetSpecificBuiltinRecord(name, sheetIndex);
         }
-        public ExternalSheet GetExternalSheet(int externSheetIndex)
-        {
-            String[] extNames = linkTable.GetExternalBookAndSheetName(externSheetIndex);
-            if (extNames == null)
-            {
-                return null;
-            }
-            return new ExternalSheet(extNames[0], extNames[1]);
-        }
+
         public ExternalName GetExternalName(int externSheetIndex, int externNameIndex)
         {
-            String nameName = linkTable.ResolveNameXText(externSheetIndex, externNameIndex);
+            String nameName = linkTable.ResolveNameXText(externSheetIndex, externNameIndex, this);
             if (nameName == null)
             {
                 return null;
@@ -720,6 +712,12 @@ namespace NPOI.HSSF.Model
             BoundSheetRecord sheet = boundsheets[sheetNumber];
             boundsheets.RemoveAt(sheetNumber);
             boundsheets.Insert(pos, sheet);
+
+            // also adjust order of Records, calculate the position of the Boundsheets via getBspos()...
+            int pos0 = records.Bspos - (boundsheets.Count - 1);
+            Record removed = records[(pos0 + sheetNumber)];
+            records.Remove(pos0 + sheetNumber);
+            records.Add(pos0 + pos, removed);
         }
 
         /**
@@ -861,13 +859,13 @@ namespace NPOI.HSSF.Model
             //}
         }
 
-        public void RemoveSheet(int sheetnum)
+        public void RemoveSheet(int sheetIndex)
         {
-            if (boundsheets.Count > sheetnum)
+            if (boundsheets.Count > sheetIndex)
             {
-                records.Remove(records.Bspos - (boundsheets.Count - 1) + sheetnum);
+                records.Remove(records.Bspos - (boundsheets.Count - 1) + sheetIndex);
                 //            records.bspos--;
-                boundsheets.RemoveAt(sheetnum);
+                boundsheets.RemoveAt(sheetIndex);
                 FixTabIdRecord();
             }
 
@@ -878,7 +876,7 @@ namespace NPOI.HSSF.Model
             // However, the sheet index must be adjusted, or
             //  excel will break. (Sheet index is either 0 for
             //  global, or 1 based index to sheet)
-            int sheetNum1Based = sheetnum + 1;
+            int sheetNum1Based = sheetIndex + 1;
             for (int i = 0; i < NumNames; i++)
             {
                 NameRecord nr = GetNameRecord(i);
@@ -886,13 +884,23 @@ namespace NPOI.HSSF.Model
                 if (nr.SheetNumber == sheetNum1Based)
                 {
                     // Excel re-writes these to point to no sheet
-                    nr.SheetNumber=(0);
+                    nr.SheetNumber = (0);
                 }
                 else if (nr.SheetNumber > sheetNum1Based)
                 {
                     // Bump down by one, so still points
                     //  at the same sheet
-                    nr.SheetNumber=(nr.SheetNumber - 1);
+                    nr.SheetNumber = (nr.SheetNumber - 1);
+                    // also update the link-table as otherwise references might point at invalid sheets
+                }
+            }
+            if (linkTable != null)
+            {
+                // also tell the LinkTable about the removed sheet
+                // +1 because we already removed it from the count of sheets!
+                for (int i = sheetIndex + 1; i < NumSheets + 1; i++)
+                {
+                    linkTable.RemoveSheet(i);
                 }
             }
         }
@@ -2190,57 +2198,123 @@ namespace NPOI.HSSF.Model
         {
             get
             {
-                if (linkTable == null)
-                {
-                    linkTable = new LinkTable((short)NumSheets, records);
-                }
-                return linkTable;
+                return GetOrCreateLinkTable();
             }
         }
 
-        /** Finds the sheet name by his extern sheet index
-         * @param num extern sheet index
-         * @return sheet name
-         */
-        public String FindSheetNameFromExternSheet(int externSheetIndex)
+        private LinkTable GetOrCreateLinkTable()
         {
-            int indexToSheet = linkTable.GetIndexToInternalSheet(externSheetIndex);
-            if (indexToSheet < 0)
+            if (linkTable == null)
+            {
+                linkTable = new LinkTable((short)NumSheets, records);
+            }
+            return linkTable;
+        }
+
+        public int LinkExternalWorkbook(String name, IWorkbook externalWorkbook)
+        {
+            return GetOrCreateLinkTable().LinkExternalWorkbook(name, externalWorkbook);
+        }
+
+        /** 
+         * Finds the first sheet name by his extern sheet index
+         * @param externSheetIndex extern sheet index
+         * @return first sheet name.
+         */
+        public String FindSheetFirstNameFromExternSheet(int externSheetIndex)
+        {
+            int indexToSheet = linkTable.GetFirstInternalSheetIndexForExtIndex(externSheetIndex);
+            return FindSheetNameFromIndex(indexToSheet);
+        }
+        public String FindSheetLastNameFromExternSheet(int externSheetIndex)
+        {
+            int indexToSheet = linkTable.GetLastInternalSheetIndexForExtIndex(externSheetIndex);
+            return FindSheetNameFromIndex(indexToSheet);
+        }
+        private String FindSheetNameFromIndex(int internalSheetIndex)
+        {
+            if (internalSheetIndex < 0)
             {
                 // TODO - what does '-1' mean here?
-                //error check, bail out gracefully!
+                //error Check, bail out gracefully!
                 return "";
             }
-            if (indexToSheet >= boundsheets.Count)
+            if (internalSheetIndex >= boundsheets.Count)
             {
                 // Not sure if this can ever happen (See bug 45798)
                 return ""; // Seems to be what excel would do in this case
             }
-            return GetSheetName(indexToSheet);
+            return GetSheetName(internalSheetIndex);
+        }
+
+        public ExternalSheet GetExternalSheet(int externSheetIndex)
+        {
+            String[] extNames = linkTable.GetExternalBookAndSheetName(externSheetIndex);
+            if (extNames == null)
+            {
+                return null;
+            }
+            if (extNames.Length == 2)
+            {
+                return new ExternalSheet(extNames[0], extNames[1]);
+            }
+            else
+            {
+                return new ExternalSheetRange(extNames[0], extNames[1], extNames[2]);
+            }
+        }
+
+
+        /**
+         * Finds the (first) sheet index for a particular external sheet number.
+         * @param externSheetNumber     The external sheet number to convert
+         * @return  The index to the sheet found.
+         */
+        public int GetFirstSheetIndexFromExternSheetIndex(int externSheetNumber)
+        {
+            return linkTable.GetFirstInternalSheetIndexForExtIndex(externSheetNumber);
         }
 
         /**
-         * Finds the sheet index for a particular external sheet number.
-         * @param externSheetNumber     The external sheet number to Convert
+         * Finds the last sheet index for a particular external sheet number,
+         *  which may be the same as the first (except for multi-sheet references)
+         * @param externSheetNumber     The external sheet number to convert
          * @return  The index to the sheet found.
          */
-        public int GetSheetIndexFromExternSheetIndex(int externSheetNumber)
+        public int GetLastSheetIndexFromExternSheetIndex(int externSheetNumber)
         {
-            return linkTable.GetSheetIndexFromExternSheetIndex(externSheetNumber);
+            return linkTable.GetLastInternalSheetIndexForExtIndex(externSheetNumber);
         }
 
-        /** returns the extern sheet number for specific sheet number ,
-         *  if this sheet doesn't exist in extern sheet , Add it
-         * @param sheetNumber sheet number
+        /** 
+         * Returns the extern sheet number for specific sheet number.
+         * If this sheet doesn't exist in extern sheet, add it
+         * @param sheetNumber local sheet number
          * @return index to extern sheet
          */
         public int CheckExternSheet(int sheetNumber)
         {
             return OrCreateLinkTable.CheckExternSheet(sheetNumber);
         }
+        /** 
+         * Returns the extern sheet number for specific range of sheets.
+         * If this sheet range doesn't exist in extern sheet, add it
+         * @param firstSheetNumber first local sheet number
+         * @param lastSheetNumber last local sheet number
+         * @return index to extern sheet
+         */
+        public short checkExternSheet(int firstSheetNumber, int lastSheetNumber)
+        {
+            return (short)OrCreateLinkTable.CheckExternSheet(firstSheetNumber, lastSheetNumber);
+        }
+
         public int GetExternalSheetIndex(String workbookName, String sheetName)
         {
-            return OrCreateLinkTable.GetExternalSheetIndex(workbookName, sheetName);
+            return OrCreateLinkTable.GetExternalSheetIndex(workbookName, sheetName, sheetName);
+        }
+        public int GetExternalSheetIndex(String workbookName, String firstSheetName, String lastSheetName)
+        {
+            return OrCreateLinkTable.GetExternalSheetIndex(workbookName, firstSheetName, lastSheetName);
         }
         /** Gets the total number of names
          * @return number of names
@@ -2257,15 +2331,16 @@ namespace NPOI.HSSF.Model
             }
         }
         /**
-     *
-     * @param name the  name of an external function, typically a name of a UDF
-     * @param udf  locator of user-defiend functions to resolve names of VBA and Add-In functions
-     * @return the external name or null
-     */
-        public NameXPtg GetNameXPtg(String name, UDFFinder udf)
+         *
+         * @param name the  name of an external function, typically a name of a UDF
+         * @param sheetRefIndex the sheet ref index, or -1 if not known
+         * @param udf  locator of user-defiend functions to resolve names of VBA and Add-In functions
+         * @return the external name or null
+         */
+        public NameXPtg GetNameXPtg(String name, int sheetRefIndex, UDFFinder udf)
         {
             LinkTable lnk = OrCreateLinkTable;
-            NameXPtg xptg = lnk.GetNameXPtg(name);
+            NameXPtg xptg = lnk.GetNameXPtg(name, sheetRefIndex);
 
             if (xptg == null && udf.FindFunction(name) != null)
             {
@@ -2275,10 +2350,10 @@ namespace NPOI.HSSF.Model
             }
             return xptg;
         }
-        //public NameXPtg GetNameXPtg(String name)
-        //{
-        //    return OrCreateLinkTable.GetNameXPtg(name);
-        //}
+        public NameXPtg GetNameXPtg(String name, UDFFinder udf)
+        {
+            return GetNameXPtg(name, -1, udf);
+        }
         /** Gets the name record
          * @param index name index
          * @return name record
@@ -2904,10 +2979,8 @@ namespace NPOI.HSSF.Model
          */
         public void WriteProtectWorkbook(String password, String username)
         {
-            //int protIdx = -1;
             FileSharingRecord frec = FileSharing;
             WriteAccessRecord waccess = WriteAccess;
-            WriteProtectRecord wprotect = WriteProtect;
             frec.ReadOnly=((short)1);
             frec.Password=(FileSharingRecord.HashPassword(password));
             frec.Username=(username);
@@ -2932,7 +3005,7 @@ namespace NPOI.HSSF.Model
          */
         public String ResolveNameXText(int reFindex, int definedNameIndex)
         {
-            return linkTable.ResolveNameXText(reFindex, definedNameIndex);
+            return linkTable.ResolveNameXText(reFindex, definedNameIndex, this);
         }
 
         public NameRecord CloneFilter(int filterDbNameIndex, int newSheetIndex)
@@ -3000,14 +3073,14 @@ namespace NPOI.HSSF.Model
         }
 
         /**
-	     * Changes an external referenced file to another file.
-	     * A formular in Excel which refers a cell in another file is saved in two parts: 
-	     * The referenced file is stored in an reference table. the row/cell information is saved separate.
-	     * This method invokation will only change the reference in the lookup-table itself.
-	     * @param oldUrl The old URL to search for and which is to be replaced
-	     * @param newUrl The URL replacement
-	     * @return true if the oldUrl was found and replaced with newUrl. Otherwise false
-	     */
+         * Changes an external referenced file to another file.
+         * A formular in Excel which refers a cell in another file is saved in two parts: 
+         * The referenced file is stored in an reference table. the row/cell information is saved separate.
+         * This method invokation will only change the reference in the lookup-table itself.
+         * @param oldUrl The old URL to search for and which is to be replaced
+         * @param newUrl The URL replacement
+         * @return true if the oldUrl was found and replaced with newUrl. Otherwise false
+         */
         public bool ChangeExternalReference(String oldUrl, String newUrl)
         {
             return linkTable.ChangeExternalReference(oldUrl, newUrl);

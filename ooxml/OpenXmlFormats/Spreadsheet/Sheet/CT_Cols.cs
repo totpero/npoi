@@ -51,7 +51,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
 
 
-        public List<CT_Col> GetColArray()
+        public List<CT_Col> GetColList()
         {
             return colField;
         }
@@ -99,5 +99,10 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
 
 
+
+        public void SetColArray(CT_Col[] colArray)
+        {
+            this.colField = new List<CT_Col>(colArray);
+        }
     }
 }

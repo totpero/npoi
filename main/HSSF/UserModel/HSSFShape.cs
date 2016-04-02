@@ -25,7 +25,10 @@ namespace NPOI.HSSF.UserModel
     using NPOI.Util;
     /// <summary>
     /// An abstract shape.
-    /// @author Glen Stampoultzis (glens at apache.org)
+    /// 
+    /// Note: Microsoft Excel seems to sometimes disallow 
+    /// higher y1 than y2 or higher x1 than x2 in the anchor, you might need to 
+    /// reverse them and draw shapes vertically or horizontally flipped! 
     /// </summary>
     [Serializable]
     public abstract class HSSFShape //: IShape
@@ -63,11 +66,11 @@ namespace NPOI.HSSF.UserModel
         private EscherContainerRecord _escherContainer;
         private ObjRecord _objRecord;
         private EscherOptRecord _optRecord;
-        int lineStyleColor = 0x08000040;
-        int fillColor = 0x08000009;
-        int lineWidth = LINEWIDTH_DEFAULT;
-        LineStyle lineStyle = LineStyle.Solid;
-        bool noFill = false;
+        //int lineStyleColor = 0x08000040;
+        //int fillColor = 0x08000009;
+        //int lineWidth = LINEWIDTH_DEFAULT;
+        //LineStyle lineStyle = LineStyle.Solid;
+        //bool noFill = false;
 
         /**
          * creates shapes from existing file
@@ -374,10 +377,6 @@ namespace NPOI.HSSF.UserModel
             }
         }
 
-        /**
-         * @return the rotation, in degrees, that is applied to a shape.
-         */
-        //
         /// <summary>
         /// get or set the rotation, in degrees, that is applied to a shape.
         /// Negative values specify rotation in the counterclockwise direction.
@@ -400,7 +399,7 @@ namespace NPOI.HSSF.UserModel
                         LittleEndian.PutInt(property.PropertyValue, bos);
                         return LittleEndian.GetShort(bos.ToArray(), 2);
                     }
-                    catch (IOException e)
+                    catch (IOException)
                     {
                         //e.printStackTrace();
                         return 0;

@@ -22,13 +22,10 @@ namespace NPOI.XWPF.UserModel
     using System.Text;
     using System.Xml;
     /**
-     * XWPFTableCell class.
-     *
-     * @author Gregg Morris (gregg dot morris at gmail dot com) - added XWPFVertAlign enum,
-     *         setColor(),
-     *         setVerticalAlignment()
+     * Represents a Cell within a {@link XWPFTable}. The
+     *  Cell is the thing that holds the actual content (paragraphs etc)
      */
-    public class XWPFTableCell : IBody
+    public class XWPFTableCell : IBody, ICell
     {
         private CT_Tc ctTc;
         protected List<XWPFParagraph> paragraphs = null;
@@ -88,24 +85,17 @@ namespace NPOI.XWPF.UserModel
                     tables.Add(t);
                     bodyElements.Add(t);
                 }
-            }
-        /*
-            XmlCursor cursor = ctTc.NewCursor();
-            cursor.SelectPath("./*");
-            while (cursor.ToNextSelection()) {
-                XmlObject o = cursor.Object;
-                if (o is CTP) {
-                    XWPFParagraph p = new XWPFParagraph((CTP)o, this);
-                    paragraphs.Add(p);
-                    bodyElements.Add(p);
+                if (o is CT_SdtBlock)
+                {
+                    XWPFSDT c = new XWPFSDT((CT_SdtBlock)o, this);
+                    bodyElements.Add(c);
                 }
-                if (o is CTTbl) {
-                    XWPFTable t = new XWPFTable((CTTbl)o, this);
-                    tables.Add(t);
-                    bodyElements.Add(t);
+                if (o is CT_SdtRun)
+                {
+                    XWPFSDT c = new XWPFSDT((CT_SdtRun)o, this);
+                    bodyElements.Add(c);
                 }
             }
-            cursor.Dispose();*/
         }
 
 
@@ -194,11 +184,27 @@ namespace NPOI.XWPF.UserModel
             return null;
         }
 
+        public void SetBorderBottom(XWPFTable.XWPFBorderType type, int size, int space, String rgbColor)
+        {
+            CT_TcPr ctTcPr = null;
+            if (!GetCTTc().IsSetTcPr())
+            {
+                ctTcPr = GetCTTc().AddNewTcPr();
+            }
+            CT_TcBorders borders = ctTcPr.AddNewTcBorders();
+            borders.bottom = new CT_Border();
+            CT_Border b = borders.bottom;
+            b.val = XWPFTable.xwpfBorderTypeMap[type];
+            b.sz = (ulong)size;
+            b.space = (ulong)space;
+            b.color = (rgbColor);
+        }
+
         public void SetText(String text)
         {
             CT_P ctP = (ctTc.SizeOfPArray() == 0) ? ctTc.AddNewP() : ctTc.GetPArray(0);
             XWPFParagraph par = new XWPFParagraph(ctP, this);
-            par.CreateRun().SetText(text);
+            par.CreateRun().AppendText(text);
         }
 
         public XWPFTableRow GetTableRow()
@@ -275,7 +281,7 @@ namespace NPOI.XWPF.UserModel
         {
             /*if(!isCursorInTableCell(cursor))
                 return null;
-    		
+            
             String uri = CTP.type.Name.NamespaceURI;
             String localPart = "p";
             cursor.BeginElement(localPart,uri);
@@ -377,9 +383,12 @@ namespace NPOI.XWPF.UserModel
          * 
          * @see NPOI.XWPF.UserModel.IBody#getPart()
          */
-        public POIXMLDocumentPart GetPart()
+        public POIXMLDocumentPart Part
         {
-            return tableRow.GetTable().GetPart();
+            get
+            {
+                return tableRow.GetTable().Part;
+            }
         }
 
 
@@ -413,9 +422,9 @@ namespace NPOI.XWPF.UserModel
          */
         public XWPFTable GetTableArray(int pos)
         {
-            if (pos > 0 && pos < tables.Count)
+            if (pos >=0 && pos < tables.Count)
             {
-                return tables[(pos)];
+                return tables[pos];
             }
             return null;
         }
@@ -426,10 +435,10 @@ namespace NPOI.XWPF.UserModel
          */
         public IList<XWPFTable> Tables
         {
-			get
-			{
-				return tables.AsReadOnly();
-			}
+            get
+            {
+                return tables.AsReadOnly();
+            }
         }
 
 
@@ -460,36 +469,87 @@ namespace NPOI.XWPF.UserModel
             return text.ToString();
         }
 
+        /**
+     * extracts all text recursively through embedded tables and embedded SDTs
+     */
+        public String GetTextRecursively()
+        {
 
+            StringBuilder text = new StringBuilder();
+            for (int i = 0; i < bodyElements.Count; i++)
+            {
+                bool isLast = (i == bodyElements.Count - 1) ? true : false;
+                AppendBodyElementText(text, bodyElements[i], isLast);
+            }
+
+            return text.ToString();
+        }
+
+        private void AppendBodyElementText(StringBuilder text, IBodyElement e, bool isLast)
+        {
+            if (e is XWPFParagraph)
+            {
+                text.Append(((XWPFParagraph)e).Text);
+                if (isLast == false)
+                {
+                    text.Append('\t');
+                }
+            }
+            else if (e is XWPFTable)
+            {
+                XWPFTable eTable = (XWPFTable)e;
+                foreach (XWPFTableRow row in eTable.Rows)
+                {
+                    foreach (XWPFTableCell cell in row.GetTableCells())
+                    {
+                        IList<IBodyElement> localBodyElements = cell.BodyElements;
+                        for (int i = 0; i < localBodyElements.Count; i++)
+                        {
+                            bool localIsLast = (i == localBodyElements.Count - 1) ? true : false;
+                            AppendBodyElementText(text, localBodyElements[i], localIsLast);
+                        }
+                    }
+                }
+
+                if (isLast == false)
+                {
+                    text.Append('\n');
+                }
+            }
+            else if (e is XWPFSDT)
+            {
+                text.Append(((XWPFSDT)e).Content.Text);
+                if (isLast == false)
+                {
+                    text.Append('\t');
+                }
+            }
+        }
         /**
          * Get the TableCell which belongs to the TableCell
          */
         public XWPFTableCell GetTableCell(CT_Tc cell)
         {
-            /*XmlCursor cursor = cell.NewCursor();
-            cursor.ToParent();
-            XmlObject o = cursor.Object;
-            if(!(o is CTRow)){
+            if (!(cell.Parent is CT_Row))
+                return null;
+            CT_Row row = (CT_Row)cell.Parent;
+
+            if (!(row.Parent is CT_Tbl))
+            {
                 return null;
             }
-            CTRow row = (CTRow)o;
-            cursor.ToParent();
-            o = cursor.Object;
-            cursor.Dispose();
-            if(! (o is CTTbl)){
-                return null;
-            }
-            CTTbl tbl = (CTTbl) o;
+            CT_Tbl tbl = (CT_Tbl)row.Parent;
             XWPFTable table = GetTable(tbl);
-            if(table == null){
+            if (table == null)
+            {
                 return null;
             }
             XWPFTableRow tableRow = table.GetRow(row);
-            if(tableRow == null){
+            if (tableRow == null)
+            {
                 return null;
             }
-            return tableRow.GetTableCell(cell);*/
-            throw new NotImplementedException();
+            return tableRow.GetTableCell(cell);
         }
 
         public XWPFDocument GetXWPFDocument()

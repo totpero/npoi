@@ -96,14 +96,14 @@ namespace NPOI.XSSF.UserModel
         {
             get
             {
-                CT_BooleanProperty bold = _ctFont.sizeOfBArray() == 0 ? null : _ctFont.GetBArray(0);
+                CT_BooleanProperty bold = _ctFont.SizeOfBArray() == 0 ? null : _ctFont.GetBArray(0);
                 return (bold != null && bold.val);
             }
             set 
             {
                 if (value)
                 {
-                    CT_BooleanProperty ctBold = _ctFont.sizeOfBArray() == 0 ? _ctFont.AddNewB() : _ctFont.GetBArray(0);
+                    CT_BooleanProperty ctBold = _ctFont.SizeOfBArray() == 0 ? _ctFont.AddNewB() : _ctFont.GetBArray(0);
                     ctBold.val = value;
                 }
                 else
@@ -426,7 +426,7 @@ namespace NPOI.XSSF.UserModel
         {
             get
             {
-                return (short)(IsBold ? FontBoldWeight.Bold : FontBoldWeight.Normal);
+                return (IsBold ? (short)FontBoldWeight.Bold : (short)FontBoldWeight.Normal);
             }
             set 
             {
@@ -500,7 +500,7 @@ namespace NPOI.XSSF.UserModel
             else
             {
                 Spreadsheet.CT_Color ctColor = _ctFont.sizeOfColorArray() == 0 ? _ctFont.AddNewColor() : _ctFont.GetColorArray(0);
-                ctColor.SetRgb(color.GetRgb());
+                ctColor.SetRgb(color.RGB);
             }
         }
 

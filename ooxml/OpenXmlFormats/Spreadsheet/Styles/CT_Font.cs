@@ -111,6 +111,21 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                 }
             }
 
+            if (this.strike != null)
+            {
+                foreach (CT_BooleanProperty x in this.strike)
+                {
+                    x.Write(sw, "strike");
+                }
+            }
+            if (this.condense != null)
+                this.condense.Write(sw, "condense");
+            if (this.extend != null)
+                this.extend.Write(sw, "extend");
+            if (this.outline != null)
+                this.outline.Write(sw, "outline");
+            if (this.shadow != null)
+                this.shadow.Write(sw, "shadow");
             if (this.u != null)
             {
                 foreach (CT_UnderlineProperty x in this.u)
@@ -118,6 +133,14 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                     x.Write(sw, "u");
                 }
             }
+            if (this.vertAlign != null)
+            {
+                foreach (CT_VerticalAlignFontProperty x in this.vertAlign)
+                {
+                    x.Write(sw, "vertAlign");
+                }
+            }
+
             if (this.sz != null)
             {
                 foreach (CT_FontSize x in this.sz)
@@ -148,31 +171,6 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                 foreach (CT_IntProperty x in this.charset)
                 {
                     x.Write(sw, "charset");
-                }
-            }
-
-            if (this.strike != null)
-            {
-                foreach (CT_BooleanProperty x in this.strike)
-                {
-                    x.Write(sw, "strike");
-                }
-            }
-            if (this.outline != null)
-                this.outline.Write(sw, "outline");
-            if (this.shadow != null)
-                this.shadow.Write(sw, "shadow");
-            if (this.condense != null)
-                this.condense.Write(sw, "condense");
-            if (this.extend != null)
-                this.extend.Write(sw, "extend");
-
-
-            if (this.vertAlign != null)
-            {
-                foreach (CT_VerticalAlignFontProperty x in this.vertAlign)
-                {
-                    x.Write(sw, "vertAlign");
                 }
             }
             if (this.scheme != null)
@@ -283,7 +281,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             get { return this.bField; }
             set { this.bField = value; }
         }
-        public int sizeOfBArray()
+        public int SizeOfBArray()
         {
             if (this.bField == null)
                 return 0;

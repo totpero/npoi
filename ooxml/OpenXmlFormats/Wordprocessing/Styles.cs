@@ -106,15 +106,18 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public IList<CT_Style> GetStyleList()
         {
+            if(this.styleField==null)
+                this.styleField = new List<CT_Style>();
             return style;
         }
 
-        public void AddNewStyle()
+        public CT_Style AddNewStyle()
         {
             CT_Style s = new CT_Style();
             if (styleField == null)
                 styleField = new List<CT_Style>();
             styleField.Add(s);
+            return s;
         }
 
         public void SetStyleArray(int pos, CT_Style cT_Style)
@@ -217,6 +220,17 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             this.rPrDefaultField = new CT_RPrDefault();
             return this.rPrDefaultField;
+        }
+
+        public bool IsSetPPrDefault()
+        {
+            return this.pPrDefaultField != null;
+        }
+
+        public CT_PPrDefault AddNewPPrDefault()
+        {
+            this.pPrDefaultField = new CT_PPrDefault();
+            return this.pPrDefaultField;
         }
     }
 
@@ -331,6 +345,17 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             {
                 this.pPrField = value;
             }
+        }
+
+        public CT_PPr AddNewPPr()
+        {
+            this.pPrField = new CT_PPr();
+            return this.pPrField;
+        }
+
+        public bool IsSetPPr()
+        {
+            return this.pPrField != null;
         }
     }
 
@@ -564,6 +589,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.lsdExceptionField = new List<CT_LsdException>();
             this.lsdExceptionField.Add(lsd);
             return lsd;
+        }
+
+        public int SizeOfLsdExceptionArray()
+        {
+            return lsdExceptionField == null ? 0 : lsdExceptionField.Count;
         }
     }
 
@@ -1163,7 +1193,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public bool IsSetName()
         {
-			return this.name != null;
+            return this.name != null;
         }
     }
     [Serializable]
@@ -1232,8 +1262,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write("/>");
         }
 
 
@@ -1322,7 +1351,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         private byte[] themeFillShadeField;
         public CT_Shd()
         {
-            this.themeColorField = ST_ThemeColor.dark1;
+            this.themeColorField = ST_ThemeColor.none;
+            this.themeFillField = ST_ThemeColor.none;
         }
 
         public static CT_Shd Parse(XmlNode node, XmlNamespaceManager namespaceManager)
@@ -1352,12 +1382,13 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             XmlHelper.WriteAttribute(sw, "w:color", this.color);
-            if(this.themeColor!= ST_ThemeColor.dark1)
+            if(this.themeColor!= ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeTint", this.themeTint);
             XmlHelper.WriteAttribute(sw, "w:themeShade", this.themeShade);
             XmlHelper.WriteAttribute(sw, "w:fill", this.fill);
-            XmlHelper.WriteAttribute(sw, "w:themeFill", this.themeFill.ToString());
+            if(this.themeFill!= ST_ThemeColor.none)
+                XmlHelper.WriteAttribute(sw, "w:themeFill", this.themeFill.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeFillTint", this.themeFillTint);
             XmlHelper.WriteAttribute(sw, "w:themeFillShade", this.themeFillShade);
             sw.Write("/>");
@@ -1754,7 +1785,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_Color()
         {
-            this.themeColorField = ST_ThemeColor.dark1;
+            this.themeColorField = ST_ThemeColor.none;
         }
 
         public static CT_Color Parse(XmlNode node, XmlNamespaceManager namespaceManager)
@@ -1776,7 +1807,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val, true);
-            if(this.themeColorField!= ST_ThemeColor.dark1)
+            if(this.themeColorField!= ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeTint", this.themeTint);
             XmlHelper.WriteAttribute(sw, "w:themeShade", this.themeShade);
@@ -1883,7 +1914,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_Underline()
         {
-            this.themeColorField = ST_ThemeColor.dark1;
+            this.themeColorField = ST_ThemeColor.none;
         }
 
         public static CT_Underline Parse(XmlNode node, XmlNamespaceManager namespaceManager)
@@ -1908,7 +1939,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
             XmlHelper.WriteAttribute(sw, "w:color", this.color);
-            if(this.themeColor!= ST_ThemeColor.dark1)
+            if(this.themeColor!= ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeTint", this.themeTint);
             XmlHelper.WriteAttribute(sw, "w:themeShade", this.themeShade);
@@ -2142,8 +2173,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write("/>");
         }
 
 
@@ -2245,7 +2275,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_Border()
         {
-            this.themeColor = ST_ThemeColor.dark1;
+            this.themeColor = ST_ThemeColor.none;
         }
 
         public static CT_Border Parse(XmlNode node, XmlNamespaceManager namespaceManager)
@@ -2275,12 +2305,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            if (this.themeColor != ST_ThemeColor.dark1)
+            if (this.themeColor != ST_ThemeColor.none)
                 XmlHelper.WriteAttribute(sw, "w:themeColor", this.themeColor.ToString());
             XmlHelper.WriteAttribute(sw, "w:themeTint", this.themeTint);
             XmlHelper.WriteAttribute(sw, "w:themeShade", this.themeShade);
             XmlHelper.WriteAttribute(sw, "w:sz", this.sz);
-            XmlHelper.WriteAttribute(sw, "w:space", this.space);
+            XmlHelper.WriteAttribute(sw, "w:space", this.space, true);
             XmlHelper.WriteAttribute(sw, "w:color", this.color);
             if(this.shadow!= ST_OnOff.off)
                 XmlHelper.WriteAttribute(sw, "w:shadow", this.shadow.ToString());

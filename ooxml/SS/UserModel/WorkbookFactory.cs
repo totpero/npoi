@@ -57,12 +57,12 @@ namespace NPOI.SS.UserModel
         }
 
         /**
-	     * Creates an HSSFWorkbook from the given NPOIFSFileSystem
-	     */
-	    public static IWorkbook Create(NPOIFSFileSystem fs)
+         * Creates an HSSFWorkbook from the given NPOIFSFileSystem
+         */
+        public static IWorkbook Create(NPOIFSFileSystem fs)
         {
-		    return new HSSFWorkbook(fs.Root, true);
-	    }
+            return new HSSFWorkbook(fs.Root, true);
+        }
 
         /// <summary>
         /// Creates an XSSFWorkbook from the given OOXML Package
@@ -97,12 +97,14 @@ namespace NPOI.SS.UserModel
             {
                 return new XSSFWorkbook(OPCPackage.Open(inputStream));
             }
-            throw new ArgumentException("Your InputStream was neither an OLE2 stream, nor an OOXML stream.");
+            throw new ArgumentException("Your stream was neither an OLE2 stream, nor an OOXML stream.");
         }
         /**
-    * Creates the appropriate HSSFWorkbook / XSSFWorkbook from
-    *  the given File, which must exist and be readable.
-    */
+        * Creates the appropriate HSSFWorkbook / XSSFWorkbook from
+        *  the given File, which must exist and be readable.
+        * <p>Note that for Workbooks opened this way, it is not possible
+        *  to explicitly close the underlying File resource.
+        */
         public static IWorkbook Create(string file)
         {
             if (!File.Exists(file))
@@ -112,20 +114,38 @@ namespace NPOI.SS.UserModel
             FileStream fStream = null;
             try
             {
-                fStream = new FileStream(file, FileMode.Open, FileAccess.Read);
-                NPOIFSFileSystem fs = new NPOIFSFileSystem(fStream);
-                IWorkbook wb = new HSSFWorkbook(fs.Root, true);
-                return wb;
+                using (fStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+                {
+                    IWorkbook wb = new HSSFWorkbook(fStream);
+                    return wb;
+                }
             }
             catch (OfficeXmlFileException e)
             {
+                // opening as .xls failed => try opening as .xlsx
                 OPCPackage pkg = OPCPackage.Open(file);
-                return new XSSFWorkbook(pkg);
-            }
-            finally
-            {
-                if (fStream != null)
-                    fStream.Close();
+                try
+                {
+                    return new XSSFWorkbook(pkg);
+                }
+                catch (IOException ioe)
+                {
+                    // ensure that file handles are closed (use revert() to not re-write the file)
+                    pkg.Revert();
+                    //pkg.close();
+
+                    // rethrow exception
+                    throw ioe;
+                }
+                catch (ArgumentException ioe)
+                {
+                    // ensure that file handles are closed (use revert() to not re-write the file) 
+                    pkg.Revert();
+                    //pkg.close();
+
+                    // rethrow exception
+                    throw ioe;
+                }
             }
         }
         /// <summary>

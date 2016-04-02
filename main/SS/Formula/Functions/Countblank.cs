@@ -39,11 +39,11 @@ namespace NPOI.SS.Formula.Functions
             double result;
             if (arg0 is RefEval)
             {
-                result = CountUtils.CountMatchingCell((RefEval)arg0, predicate);
+                result = CountUtils.CountMatchingCellsInRef((RefEval)arg0, predicate);
             }
-            else if (arg0 is TwoDEval)
+            else if (arg0 is ThreeDEval)
             {
-                result = CountUtils.CountMatchingCellsInArea((TwoDEval)arg0, predicate);
+                result = CountUtils.CountMatchingCellsInArea((ThreeDEval)arg0, predicate);
             }
             else
             {
@@ -52,8 +52,8 @@ namespace NPOI.SS.Formula.Functions
             return new NumberEval(result);
         }
 
-        private static I_MatchPredicate predicate = new BlankPredicate();
-        private class BlankPredicate : I_MatchPredicate
+        private static IMatchPredicate predicate = new BlankPredicate();
+        private class BlankPredicate : IMatchPredicate
         {
             #region I_MatchPredicate 成员
 

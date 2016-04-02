@@ -122,8 +122,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "rgb", this.rgb);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
         private byte[] rgbField = null; // ARGB
@@ -201,7 +200,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             set
             {
                 this.indexedField = value;
-                this.indexedSpecifiedField = indexed != 0;
+                this.indexedSpecifiedField = true;
             }
         }
         bool indexedSpecifiedField = false;
@@ -260,7 +259,10 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
         public byte[] GetRgb()
         {
-            return rgbField;
+            if (rgbField == null) return null;
+            byte[] retVal = new byte[rgbField.Length];
+            Array.Copy(rgbField, retVal, rgbField.Length);
+            return retVal;
         }
         #endregion rgb
 
@@ -275,6 +277,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             set
             {
                 this.themeField = value;
+                this.themeSpecifiedField = true;
             }
         }
         bool themeSpecifiedField;
@@ -357,16 +360,32 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "auto", this.auto,false);
-            XmlHelper.WriteAttribute(sw, "indexed", this.indexed);
-            XmlHelper.WriteAttribute(sw, "rgb", this.rgb);
-            XmlHelper.WriteAttribute(sw, "theme", this.theme);
-            XmlHelper.WriteAttribute(sw, "tint", this.tint);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            if (indexedSpecified)
+                XmlHelper.WriteAttribute(sw, "indexed", this.indexed, true);
+            if(rgbSpecified)
+                XmlHelper.WriteAttribute(sw, "rgb", this.rgb);
+            if (themeSpecified)
+                XmlHelper.WriteAttribute(sw, "theme", this.theme, true);
+            if(tintSpecified)
+                XmlHelper.WriteAttribute(sw, "tint", this.tint);
+            sw.Write("/>");
         }
 
+        public CT_Color Copy()
+        {
+            var res = new CT_Color();
+            res.autoField = this.autoField;
 
+            res.indexedField = this.indexedField;
 
+            res.rgbField = this.rgbField == null ? null : (byte[])this.rgbField.Clone(); // type ST_UnsignedIntHex is xsd:hexBinary restricted to length 4 (octets!? - see http://www.grokdoc.net/index.php/EOOXML_Objections_Clearinghouse)
+
+            res.themeField = this.themeField; // TODO change all the uses theme to use uint instead of signed integer variants
+
+            res.tintField = this.tintField;
+
+            return res;
+        }
     }
 
 }

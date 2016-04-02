@@ -66,7 +66,7 @@ namespace TestCases
 
         public static POIDataSamples GetOpenXml4NetInstance()
         {
-            if (_instDiagram == null) _instDiagram = new POIDataSamples("OpenXml4Net");
+            if (_instDiagram == null) _instDiagram = new POIDataSamples("openxml4j");
             return _instDiagram;
         }
 
@@ -186,12 +186,24 @@ namespace TestCases
                 throw;
             }
         }
+
+        public FileInfo GetFileInfo(string sampleFileName)
+        {
+            string path = _resolvedDataDir + sampleFileName;
+            if (!File.Exists(path))
+            {
+                throw new Exception("Sample file '" + sampleFileName
+                        + "' not found in data dir '" + _resolvedDataDir + "'");
+            }
+            return new FileInfo(path);
+        }
+
         /**
- *
- * @param sampleFileName    the name of the test file
- * @return
- * @throws RuntimeException if the file was not found
- */
+         *
+         * @param sampleFileName    the name of the test file
+         * @return
+         * @throws RuntimeException if the file was not found
+         */
         public FileStream GetFile(String sampleFileName)
         {
             string path=_resolvedDataDir+sampleFileName;

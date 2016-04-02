@@ -23,6 +23,10 @@ namespace TestCases.SS.UserModel
     using TestCases.SS;
     using NPOI.SS.UserModel;
     using NPOI.SS.Util;
+    using NPOI.HSSF.Util;
+    using NPOI.HSSF.UserModel;
+    using System.Text;
+    using NPOI.SS;
 
     /**
      * Common superclass for testing implementatiosn of
@@ -196,7 +200,7 @@ namespace TestCases.SS.UserModel
             ICellStyle cs = wb.CreateCellStyle();
             IFont f = wb.CreateFont();
             f.FontHeightInPoints = 20;
-            f.Color = (IndexedColors.Red.Index);
+            f.Color = (HSSFColor.Red.Index);
             f.Boldweight = (int)FontBoldWeight.Bold;
             f.FontName = "Arial Unicode MS";
             cs.FillBackgroundColor = 3;
@@ -220,11 +224,11 @@ namespace TestCases.SS.UserModel
             cs = c.CellStyle;
 
             Assert.IsNotNull(cs, "Formula Cell Style");
-            Assert.IsTrue((cs.FontIndex == f.Index), "Font Index Matches");
-            Assert.IsTrue((cs.BorderTop == BorderStyle.Thin), "Top Border");
-            Assert.IsTrue((cs.BorderLeft == BorderStyle.Thin), "Left Border");
-            Assert.IsTrue((cs.BorderRight == BorderStyle.Thin), "Right Border");
-            Assert.IsTrue((cs.BorderBottom == BorderStyle.Thin), "Bottom Border");
+            Assert.AreEqual(f.Index, cs.FontIndex, "Font Index Matches");
+            Assert.AreEqual(BorderStyle.Thin, cs.BorderTop , "Top Border");
+            Assert.AreEqual(BorderStyle.Thin, cs.BorderLeft, "Left Border");
+            Assert.AreEqual(BorderStyle.Thin, cs.BorderRight, "Right Border");
+            Assert.AreEqual(BorderStyle.Thin, cs.BorderBottom, "Bottom Border");
         }
 
         /**tests the ToString() method of HSSFCell*/
@@ -640,5 +644,209 @@ namespace TestCases.SS.UserModel
             Assert.IsTrue(style2.IsLocked);
             Assert.IsFalse(style2.IsHidden);
         }
+        [Test]
+        public void TestBug55658SetNumericValue()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sh = wb.CreateSheet();
+            IRow row = sh.CreateRow(0);
+            ICell cell = row.CreateCell(0);
+            cell.SetCellValue(23);
+
+            cell.SetCellValue("some");
+
+            cell = row.CreateCell(1);
+            cell.SetCellValue(23);
+
+            cell.SetCellValue("24");
+
+            wb = _testDataProvider.WriteOutAndReadBack(wb);
+
+            Assert.AreEqual("some", wb.GetSheetAt(0).GetRow(0).GetCell(0).StringCellValue);
+            Assert.AreEqual("24", wb.GetSheetAt(0).GetRow(0).GetCell(1).StringCellValue);
+        }
+        [Test]
+        public void TestRemoveHyperlink()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sh = wb.CreateSheet("test");
+            IRow row = sh.CreateRow(0);
+            ICreationHelper helper = wb.GetCreationHelper();
+
+            ICell cell1 = row.CreateCell(1);
+            IHyperlink link1 = helper.CreateHyperlink(HyperlinkType.Url);
+            cell1.Hyperlink = (/*setter*/link1);
+            Assert.IsNotNull(cell1.Hyperlink);
+            cell1.RemoveHyperlink();
+            Assert.IsNull(cell1.Hyperlink);
+
+            ICell cell2 = row.CreateCell(0);
+            IHyperlink link2 = helper.CreateHyperlink(HyperlinkType.Url);
+            cell2.Hyperlink = (/*setter*/link2);
+            Assert.IsNotNull(cell2.Hyperlink);
+            cell2.Hyperlink = (/*setter*/null);
+            Assert.IsNull(cell2.Hyperlink);
+
+            ICell cell3 = row.CreateCell(2);
+            IHyperlink link3 = helper.CreateHyperlink(HyperlinkType.Url);
+            link3.Address = (/*setter*/"http://poi.apache.org/");
+            cell3.Hyperlink = (/*setter*/link3);
+            Assert.IsNotNull(cell3.Hyperlink);
+
+            IWorkbook wbBack = _testDataProvider.WriteOutAndReadBack(wb);
+            Assert.IsNotNull(wbBack);
+
+            cell1 = wbBack.GetSheet("test").GetRow(0).GetCell(1);
+            Assert.IsNull(cell1.Hyperlink);
+            cell2 = wbBack.GetSheet("test").GetRow(0).GetCell(0);
+            Assert.IsNull(cell2.Hyperlink);
+            cell3 = wbBack.GetSheet("test").GetRow(0).GetCell(2);
+            Assert.IsNotNull(cell3.Hyperlink);
+        }
+
+        /**
+         * Cell with the formula that returns error must return error code(There was
+         * an problem that cell could not return error value form formula cell).
+         * @
+         */
+        [Test]
+        public void TestGetErrorCellValueFromFormulaCell()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            try
+            {
+                ISheet sheet = wb.CreateSheet();
+                IRow row = sheet.CreateRow(0);
+                ICell cell = row.CreateCell(0);
+                cell.CellFormula = (/*setter*/"SQRT(-1)");
+                wb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
+                Assert.AreEqual(36, cell.ErrorCellValue);
+            }
+            finally
+            {
+                wb.Close();
+            }
+        }
+
+        [Test]
+        public void TestSetRemoveStyle()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sheet = wb.CreateSheet();
+            IRow row = sheet.CreateRow(0);
+            ICell cell = row.CreateCell(0);
+
+            // different default style indexes for HSSF and XSSF/SXSSF
+            ICellStyle defaultStyle = wb.GetCellStyleAt(wb is HSSFWorkbook ? (short)15 : (short)0);
+
+            // Starts out with the default style
+            Assert.AreEqual(defaultStyle, cell.CellStyle);
+
+            // Create some styles, no change
+            ICellStyle style1 = wb.CreateCellStyle();
+            ICellStyle style2 = wb.CreateCellStyle();
+            style1.DataFormat = (/*setter*/(short)2);
+            style2.DataFormat = (/*setter*/(short)3);
+
+            Assert.AreEqual(defaultStyle, cell.CellStyle);
+
+            // Apply one, Changes
+            cell.CellStyle = (/*setter*/style1);
+            Assert.AreEqual(style1, cell.CellStyle);
+
+            // Apply the other, Changes
+            cell.CellStyle = (/*setter*/style2);
+            Assert.AreEqual(style2, cell.CellStyle);
+
+            // Remove, goes back to default
+            cell.CellStyle = (/*setter*/null);
+            Assert.AreEqual(defaultStyle, cell.CellStyle);
+
+            // Add back, returns
+            cell.CellStyle = (/*setter*/style2);
+            Assert.AreEqual(style2, cell.CellStyle);
+
+            wb.Close();
+        }
+
+        [Test]
+        public void Test57008()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sheet = wb.CreateSheet();
+
+            IRow row0 = sheet.CreateRow(0);
+            ICell cell0 = row0.CreateCell(0);
+            cell0.SetCellValue("row 0, cell 0 _x0046_ without Changes");
+
+            ICell cell1 = row0.CreateCell(1);
+            cell1.SetCellValue("row 0, cell 1 _x005fx0046_ with Changes");
+
+            ICell cell2 = row0.CreateCell(2);
+            cell2.SetCellValue("hgh_x0041_**_x0100_*_x0101_*_x0190_*_x0200_*_x0300_*_x0427_*");
+
+            CheckUnicodeValues(wb);
+
+            //		String fname = "/tmp/Test_xNNNN_inCell" + (wb is HSSFWorkbook ? ".xls" : ".xlsx");
+            //		FileOutputStream out1 = new FileOutputStream(fname);
+            //		try {
+            //			wb.Write(out1);
+            //		} finally {
+            //			out1.Close();
+            //		}
+
+            IWorkbook wbBack = _testDataProvider.WriteOutAndReadBack(wb);
+            CheckUnicodeValues(wbBack);
+        }
+
+        protected void CheckUnicodeValues(IWorkbook wb)
+        {
+            Assert.AreEqual((wb is HSSFWorkbook ? "row 0, cell 0 _x0046_ without Changes" : "row 0, cell 0 F without Changes"),
+                    wb.GetSheetAt(0).GetRow(0).GetCell(0).ToString());
+            Assert.AreEqual((wb is HSSFWorkbook ? "row 0, cell 1 _x005fx0046_ with Changes" : "row 0, cell 1 _x005fx0046_ with Changes"),
+                    wb.GetSheetAt(0).GetRow(0).GetCell(1).ToString());
+            Assert.AreEqual((wb is HSSFWorkbook ? "hgh_x0041_**_x0100_*_x0101_*_x0190_*_x0200_*_x0300_*_x0427_*" : "hghA**\u0100*\u0101*\u0190*\u0200*\u0300*\u0427*"),
+                    wb.GetSheetAt(0).GetRow(0).GetCell(2).ToString());
+        }
+
+        /**
+         *  The maximum length of cell contents (text) is 32,767 characters.
+         * @
+         */
+        [Test]
+        public void TestMaxTextLength()
+        {
+            IWorkbook wb = _testDataProvider.CreateWorkbook();
+            ISheet sheet = wb.CreateSheet();
+            ICell cell = sheet.CreateRow(0).CreateCell(0);
+
+            int maxlen = wb is HSSFWorkbook ?
+                    SpreadsheetVersion.EXCEL97.MaxTextLength
+                    : SpreadsheetVersion.EXCEL2007.MaxTextLength;
+            Assert.AreEqual(32767, maxlen);
+
+            StringBuilder b = new StringBuilder();
+
+            // 32767 is okay
+            for (int i = 0; i < maxlen; i++)
+            {
+                b.Append("X");
+            }
+            cell.SetCellValue(b.ToString());
+
+            b.Append("X");
+            // 32768 produces an invalid XLS file
+            try
+            {
+                cell.SetCellValue(b.ToString());
+                Assert.Fail("Expected exception");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("The maximum length of cell contents (text) is 32,767 characters", e.Message);
+            }
+            wb.Close();
+        }
+
     }
 }

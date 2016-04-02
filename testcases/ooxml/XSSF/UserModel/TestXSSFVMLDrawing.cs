@@ -48,22 +48,22 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual("21600,21600", type.coordsize);
             Assert.AreEqual(202.0f, type.spt);
             Assert.AreEqual("m,l,21600r21600,l21600,xe", type.path2);
-            Assert.AreEqual("_xssf_cell_comment", type.id);
-            Assert.AreEqual(ST_TrueFalse.t, type.path.gradientshapeok);
+            Assert.IsTrue(type.id.StartsWith("_x0000_"));
+            Assert.AreEqual(NPOI.OpenXmlFormats.Vml.ST_TrueFalse.t, type.path.gradientshapeok);
             Assert.AreEqual(ST_ConnectType.rect, type.path.connecttype);
 
             CT_Shape shape = vml.newCommentShape();
             Assert.AreEqual(3, items.Count);
             Assert.AreSame(items[2], shape);
-            Assert.AreEqual("#_xssf_cell_comment", shape.type);
+            Assert.IsTrue(shape.type.StartsWith("#_x0000_"));
             Assert.AreEqual("position:absolute; visibility:hidden", shape.style);
             Assert.AreEqual("#ffffe1", shape.fillcolor);
             Assert.AreEqual(ST_InsetMode.auto, shape.insetmode);
             Assert.AreEqual("#ffffe1", shape.fill.color);
             CT_Shadow shadow = shape.shadow;
-            Assert.AreEqual(ST_TrueFalse.t, shadow.on);
+            Assert.AreEqual(NPOI.OpenXmlFormats.Vml.ST_TrueFalse.t, shadow.on);
             Assert.AreEqual("black", shadow.color);
-            Assert.AreEqual(ST_TrueFalse.t, shadow.obscured);
+            Assert.AreEqual(NPOI.OpenXmlFormats.Vml.ST_TrueFalse.t, shadow.obscured);
             Assert.AreEqual(ST_ConnectType.none, shape.path.connecttype);
             Assert.AreEqual("mso-direction-alt:auto", shape.textbox.style);
             CT_ClientData cldata = shape.GetClientDataArray(0);

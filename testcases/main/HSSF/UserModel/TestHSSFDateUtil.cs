@@ -25,6 +25,7 @@ namespace TestCases.HSSF.UserModel
     using NUnit.Framework;
     using NPOI.HSSF.UserModel;
     using NPOI.SS.UserModel;
+    using NPOI.SS.Util;
 
     /**
      * Class TestHSSFDateUtil
@@ -414,6 +415,19 @@ namespace TestCases.HSSF.UserModel
             Assert.IsTrue(DateUtil.IsADateFormat(style.DataFormat, style.GetDataFormatString()));
             Assert.IsTrue(DateUtil.IsCellDateFormatted(cell));
         }
+
+        [Test]
+        public void ExcelDateBorderCases()
+        {
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+
+            Assert.AreEqual(1.0, DateUtil.GetExcelDate(df.Parse("1900-01-01")), 0.00001);
+            Assert.AreEqual(31.0, DateUtil.GetExcelDate(df.Parse("1900-01-31")), 0.00001);
+            Assert.AreEqual(32.0, DateUtil.GetExcelDate(df.Parse("1900-02-01")), 0.00001);
+            Assert.AreEqual(/* BAD_DATE! */ -1.0, DateUtil.GetExcelDate(df.Parse("1899-12-31")), 0.00001);
+        }
+
+
         [Test]
         public void TestDateBug_2Excel()
         {
@@ -512,5 +526,32 @@ namespace TestCases.HSSF.UserModel
 
             Assert.AreEqual(valueToTest.TimeOfDay, returnedValue.TimeOfDay);
         }
+        /**
+         * DateUtil.isCellFormatted(Cell) should not true for a numeric cell 
+         * that's formatted as ".0000"
+         */
+        [Test]
+        public void TestBug54557()
+        {
+            string format = ".0000";
+            bool isDateFormat = HSSFDateUtil.IsADateFormat(165, format);
+
+            Assert.AreEqual(false, isDateFormat);
+        }
+
+        [Test]
+        public void Bug56269()
+        {
+            double excelFraction = 41642.45833321759d;
+            DateTime calNoRound = HSSFDateUtil.GetJavaCalendar(excelFraction, false);
+            Assert.AreEqual(10, calNoRound.Hour);
+            Assert.AreEqual(59, calNoRound.Minute);
+            Assert.AreEqual(59, calNoRound.Second);
+            DateTime calRound = HSSFDateUtil.GetJavaCalendar(excelFraction, false, true);
+            Assert.AreEqual(11, calRound.Hour);
+            Assert.AreEqual(0, calRound.Minute);
+            Assert.AreEqual(0, calRound.Second);
+        }
+
     }
 }

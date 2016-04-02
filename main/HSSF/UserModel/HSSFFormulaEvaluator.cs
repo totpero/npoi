@@ -24,12 +24,13 @@ namespace NPOI.HSSF.UserModel
     using NPOI.SS.Formula.PTG;
     using NPOI.SS.Formula.Udf;
     using NPOI.SS.UserModel;
+    using System.Collections.Generic;
 
     /**
      * @author Amol S. Deshmukh &lt; amolweb at ya hoo dot com &gt;
      * 
      */
-    public class HSSFFormulaEvaluator : IFormulaEvaluator
+    public class HSSFFormulaEvaluator : IFormulaEvaluator, IWorkbookEvaluatorProvider
     {
         private WorkbookEvaluator _bookEvaluator;
         // params to lookup the right constructor using reflection
@@ -97,11 +98,11 @@ namespace NPOI.HSSF.UserModel
         }
 
         /**
-	 * @param stabilityClassifier used to optimise caching performance. Pass <code>null</code>
-	 * for the (conservative) assumption that any cell may have its definition changed after
-	 * evaluation begins.
-	 * @param udfFinder pass <code>null</code> for default (AnalysisToolPak only)
-	 */
+     * @param stabilityClassifier used to optimise caching performance. Pass <code>null</code>
+     * for the (conservative) assumption that any cell may have its definition changed after
+     * evaluation begins.
+     * @param udfFinder pass <code>null</code> for default (AnalysisToolPak only)
+     */
         public static HSSFFormulaEvaluator Create(IWorkbook workbook, IStabilityClassifier stabilityClassifier, UDFFinder udfFinder)
         {
             return new HSSFFormulaEvaluator(workbook, stabilityClassifier, udfFinder);
@@ -170,6 +171,15 @@ namespace NPOI.HSSF.UserModel
             CollaboratingWorkbooksEnvironment.Setup(workbookNames, wbEvals);
         }
 
+        public void SetupReferencedWorkbooks(Dictionary<String, IFormulaEvaluator> evaluators)
+        {
+            CollaboratingWorkbooksEnvironment.SetupFormulaEvaluator(evaluators);
+        }
+
+        public WorkbookEvaluator GetWorkbookEvaluator()
+        {
+            return _bookEvaluator;
+        }
         /**
          * If cell Contains a formula, the formula is Evaluated and returned,
          * else the CellValue simply copies the appropriate cell value from
@@ -215,13 +225,13 @@ namespace NPOI.HSSF.UserModel
 
 
         /**
- * Should be called whenever there are major changes (e.g. moving sheets) to input cells
- * in the evaluated workbook.  If performance is not critical, a single call to this method
- * may be used instead of many specific calls to the notify~ methods.
- *  
- * Failure to call this method after changing cell values will cause incorrect behaviour
- * of the evaluate~ methods of this class
- */
+         * Should be called whenever there are major changes (e.g. moving sheets) to input cells
+         * in the evaluated workbook.  If performance is not critical, a single call to this method
+         * may be used instead of many specific calls to the notify~ methods.
+         *  
+         * Failure to call this method after changing cell values will cause incorrect behaviour
+         * of the evaluate~ methods of this class
+         */
         public void ClearAllCachedResultValues()
         {
             _bookEvaluator.ClearAllCachedResultValues();
@@ -289,20 +299,20 @@ namespace NPOI.HSSF.UserModel
         }
         /**
          * Returns a CellValue wrapper around the supplied ValueEval instance.
-         * @param eval
+         * @param cell
          */
         private CellValue EvaluateFormulaCellValue(ICell cell)
         {
             ValueEval eval = _bookEvaluator.Evaluate(new HSSFEvaluationCell((HSSFCell)cell));
-            if (eval is NumberEval)
-            {
-                NumberEval ne = (NumberEval)eval;
-                return new CellValue(ne.NumberValue);
-            }
             if (eval is BoolEval)
             {
                 BoolEval be = (BoolEval)eval;
                 return CellValue.ValueOf(be.BooleanValue);
+            }
+            if (eval is NumberEval)
+            {
+                NumberEval ne = (NumberEval)eval;
+                return new CellValue(ne.NumberValue);
             }
             if (eval is StringEval)
             {

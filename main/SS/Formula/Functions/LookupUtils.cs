@@ -22,6 +22,7 @@ namespace NPOI.SS.Formula.Functions
     using NPOI.SS.Formula;
     using NPOI.SS.Formula.Eval;
     using System.Globalization;
+    using System.Text.RegularExpressions;
 
     /**
      * Common functionality used by VLOOKUP, HLOOKUP, LOOKUP and MATCH
@@ -107,6 +108,37 @@ namespace NPOI.SS.Formula.Functions
             }
         }
 
+        private class SheetVector : ValueVector
+        {
+            private RefEval _re;
+            private int _size;
+
+            public SheetVector(RefEval re)
+            {
+                _size = re.NumberOfSheets;
+                _re = re;
+            }
+
+            public ValueEval GetItem(int index)
+            {
+                if (index >= _size)
+                {
+                    throw new IndexOutOfRangeException("Specified index (" + index
+                            + ") is outside the allowed range (0.." + (_size - 1) + ")");
+                }
+                int sheetIndex = _re.FirstSheetIndex + index;
+                return _re.GetInnerValueEval(sheetIndex);
+            }
+            public int Size
+            {
+                get
+                {
+                    return _size;
+                }
+            }
+        }
+
+
         public static ValueVector CreateRowVector(TwoDEval tableArray, int relativeRowIndex)
         {
             return new RowVector((AreaEval)tableArray, relativeRowIndex);
@@ -116,8 +148,8 @@ namespace NPOI.SS.Formula.Functions
             return new ColumnVector((AreaEval)tableArray, relativeColumnIndex);
         }
         /**
- * @return <c>null</c> if the supplied area is neither a single row nor a single colum
- */
+         * @return <c>null</c> if the supplied area is neither a single row nor a single colum
+         */
         public static ValueVector CreateVector(TwoDEval ae)
         {
             if (ae.IsColumn)
@@ -130,20 +162,47 @@ namespace NPOI.SS.Formula.Functions
             }
             return null;
         }
+
+        public static ValueVector CreateVector(RefEval re)
+        {
+            return new SheetVector(re);
+        }
         private class StringLookupComparer : LookupValueComparerBase
         {
-            private String _value;
 
-            public StringLookupComparer(StringEval se)
+            private String _value;
+            private Regex _wildCardPattern;
+            private bool _matchExact;
+            private bool _isMatchFunction;
+
+            public StringLookupComparer(StringEval se, bool matchExact, bool isMatchFunction)
                 : base(se)
             {
 
                 _value = se.StringValue;
+                _wildCardPattern = Countif.StringMatcher.GetWildCardPattern(_value);
+                _matchExact = matchExact;
+                _isMatchFunction = isMatchFunction;
             }
+
             protected override CompareResult CompareSameType(ValueEval other)
             {
                 StringEval se = (StringEval)other;
-                return CompareResult.ValueOf(String.Compare(_value, se.StringValue, StringComparison.OrdinalIgnoreCase));
+
+                String stringValue = se.StringValue;
+                if (_wildCardPattern != null)
+                {
+                    MatchCollection matcher = _wildCardPattern.Matches(stringValue);
+                    bool matches = matcher.Count > 0;
+
+                    if (_isMatchFunction ||
+                        !_matchExact)
+                    {
+                        return CompareResult.ValueOf(matches);
+                    }
+                }
+
+                return CompareResult.ValueOf(String.Compare(_value, stringValue, true));
             }
             protected override String GetValueAsString()
             {
@@ -197,36 +256,36 @@ namespace NPOI.SS.Formula.Functions
          */
         public static int ResolveRowOrColIndexArg(ValueEval rowColIndexArg, int srcCellRow, int srcCellCol)
         {
-		    if(rowColIndexArg == null) {
-			    throw new ArgumentException("argument must not be null");
-		    }
-    		
-		    ValueEval veRowColIndexArg;
-		    try {
-			    veRowColIndexArg = OperandResolver.GetSingleValue(rowColIndexArg, srcCellRow, (short)srcCellCol);
-		    } catch (EvaluationException) {
-			    // All errors get translated to #REF!
-			    throw EvaluationException.InvalidRef();
-		    }
-		    int oneBasedIndex;
-		    if(veRowColIndexArg is StringEval) {
-			    StringEval se = (StringEval) veRowColIndexArg;
-			    String strVal = se.StringValue;
-			    Double dVal = OperandResolver.ParseDouble(strVal);
-			    if(Double.IsNaN(dVal)) {
-				    // String does not resolve to a number. Raise #REF! error.
-				    throw EvaluationException.InvalidRef();
-				    // This includes text booleans "TRUE" and "FALSE".  They are not valid.
-			    }
-			    // else - numeric value parses OK
-		    }
-		    // actual BoolEval values get interpreted as FALSE->0 and TRUE->1
-		    oneBasedIndex = OperandResolver.CoerceValueToInt(veRowColIndexArg);
-		    if (oneBasedIndex < 1) {
-			    // note this is asymmetric with the errors when the index is too large (#REF!)  
-			    throw EvaluationException.InvalidValue();
-		    }
-		    return oneBasedIndex - 1; // convert to zero based
+            if(rowColIndexArg == null) {
+                throw new ArgumentException("argument must not be null");
+            }
+            
+            ValueEval veRowColIndexArg;
+            try {
+                veRowColIndexArg = OperandResolver.GetSingleValue(rowColIndexArg, srcCellRow, (short)srcCellCol);
+            } catch (EvaluationException) {
+                // All errors get translated to #REF!
+                throw EvaluationException.InvalidRef();
+            }
+            int oneBasedIndex;
+            if(veRowColIndexArg is StringEval) {
+                StringEval se = (StringEval) veRowColIndexArg;
+                String strVal = se.StringValue;
+                Double dVal = OperandResolver.ParseDouble(strVal);
+                if(Double.IsNaN(dVal)) {
+                    // String does not resolve to a number. Raise #REF! error.
+                    throw EvaluationException.InvalidRef();
+                    // This includes text booleans "TRUE" and "FALSE".  They are not valid.
+                }
+                // else - numeric value parses OK
+            }
+            // actual BoolEval values get interpreted as FALSE->0 and TRUE->1
+            oneBasedIndex = OperandResolver.CoerceValueToInt(veRowColIndexArg);
+            if (oneBasedIndex < 1) {
+                // note this is asymmetric with the errors when the index is too large (#REF!)  
+                throw EvaluationException.InvalidValue();
+            }
+            return oneBasedIndex - 1; // convert to zero based
         }
 
 
@@ -242,13 +301,13 @@ namespace NPOI.SS.Formula.Functions
                 return (AreaEval)eval;
             }
 
-		    if(eval is RefEval) {
-			    RefEval refEval = (RefEval) eval;
-			    // Make this cell ref look like a 1x1 area ref.
+            if(eval is RefEval) {
+                RefEval refEval = (RefEval) eval;
+                // Make this cell ref look like a 1x1 area ref.
 
-			    // It doesn't matter if eval is a 2D or 3D ref, because that detail is never asked of AreaEval.
-			    return refEval.Offset(0, 0, 0, 0);
-		    }
+                // It doesn't matter if eval is a 2D or 3D ref, because that detail is never asked of AreaEval.
+                return refEval.Offset(0, 0, 0, 0);
+            }
             throw EvaluationException.InvalidValue();
         }
 
@@ -315,11 +374,11 @@ namespace NPOI.SS.Formula.Functions
             throw new Exception("Unexpected eval type (" + valEval.GetType().Name + ")");
         }
 
-        public static int LookupIndexOfValue(ValueEval lookupValue, ValueVector vector, bool IsRangeLookup)
+        public static int LookupIndexOfValue(ValueEval lookupValue, ValueVector vector, bool isRangeLookup)
         {
-            LookupValueComparer lookupComparer = CreateLookupComparer(lookupValue);
+            LookupValueComparer lookupComparer = CreateLookupComparer(lookupValue, isRangeLookup, false);
             int result;
-            if (IsRangeLookup)
+            if (isRangeLookup)
             {
                 result = PerformBinarySearch(vector, lookupComparer);
             }
@@ -337,7 +396,7 @@ namespace NPOI.SS.Formula.Functions
 
         /**
          * Finds first (lowest index) exact occurrence of specified value.
-         * @param lookupValue the value to be found in column or row vector
+         * @param lookupComparer the value to be found in column or row vector
          * @param vector the values to be searched. For VLOOKUP this Is the first column of the 
          * 	tableArray. For HLOOKUP this Is the first row of the tableArray. 
          * @return zero based index into the vector, -1 if value cannot be found
@@ -459,7 +518,7 @@ namespace NPOI.SS.Formula.Functions
             return maxIx - 1;
         }
 
-        public static LookupValueComparer CreateLookupComparer(ValueEval lookupValue)
+        public static LookupValueComparer CreateLookupComparer(ValueEval lookupValue, bool matchExact, bool isMatchFunction)
         {
 
             if (lookupValue == BlankEval.instance)
@@ -471,7 +530,7 @@ namespace NPOI.SS.Formula.Functions
             }
             if (lookupValue is StringEval)
             {
-                return new StringLookupComparer((StringEval)lookupValue);
+                return new StringLookupComparer((StringEval)lookupValue, matchExact, isMatchFunction);
             }
             if (lookupValue is NumberEval)
             {
@@ -537,7 +596,14 @@ namespace NPOI.SS.Formula.Functions
             }
             return Equal;
         }
-
+        public static CompareResult ValueOf(bool matches)
+        {
+            if (matches)
+            {
+                return Equal;
+            }
+            return LessThan;
+        }
         public bool IsTypeMismatch
         {
             get { return _isTypeMismatch; }
@@ -691,14 +757,14 @@ namespace NPOI.SS.Formula.Functions
     internal abstract class LookupValueComparerBase : LookupValueComparer
     {
 
-        private Type _tarGetType;
-        protected LookupValueComparerBase(ValueEval tarGetValue)
+        private Type _targetType;
+        protected LookupValueComparerBase(ValueEval targetValue)
         {
-            if (tarGetValue == null)
+            if (targetValue == null)
             {
-                throw new Exception("tarGetValue cannot be null");
+                throw new Exception("targetValue cannot be null");
             }
-            _tarGetType = tarGetValue.GetType();
+            _targetType = targetValue.GetType();
         }
         public CompareResult CompareTo(ValueEval other)
         {
@@ -706,13 +772,9 @@ namespace NPOI.SS.Formula.Functions
             {
                 throw new Exception("Compare to value cannot be null");
             }
-            if (_tarGetType != other.GetType())
+            if (_targetType != other.GetType())
             {
                 return CompareResult.TypeMismatch;
-            }
-            if (_tarGetType == typeof(StringEval))
-            {
-
             }
             return CompareSameType(other);
         }

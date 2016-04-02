@@ -22,6 +22,8 @@ namespace TestCases.SS.UserModel
 
     using NPOI.HSSF.UserModel;
     using NPOI.SS.UserModel;
+    using NPOI.SS.Util;
+    using System.Globalization;
 
     /**
      * Tests of {@link DataFormatter}
@@ -32,6 +34,7 @@ namespace TestCases.SS.UserModel
     [TestFixture]
     public class TestDataFormatter
     {
+        private static double _15_MINUTES = 0.041666667;
         /**
          * Test that we use the specified locale when deciding
          *   how to format normal numbers
@@ -45,7 +48,8 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual("1234", dfUS.FormatRawCellContents(1234, -1, "@"));
             Assert.AreEqual("1234", dfFR.FormatRawCellContents(1234, -1, "@"));
             
-            Assert.AreEqual("12.34", dfUS.FormatRawCellContents(12.34, -1, "@"));            
+            Assert.AreEqual("12.34", dfUS.FormatRawCellContents(12.34, -1, "@"));
+            System.Threading.Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
             Assert.AreEqual("12,34", dfFR.FormatRawCellContents(12.34, -1, "@"));
         }
         /**
@@ -243,13 +247,27 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual("321 321/1000", dfUS.FormatRawCellContents(321.321, -1, "# #/##########"));
 
             // Not a valid fraction formats (too many #/# or ?/?) - hence the strange expected results
-            Assert.AreEqual("321 / ?/?", dfUS.FormatRawCellContents(321.321, -1, "# #/# ?/?"));
+            /*Assert.AreEqual("321 / ?/?", dfUS.FormatRawCellContents(321.321, -1, "# #/# ?/?"));
             Assert.AreEqual("321 / /", dfUS.FormatRawCellContents(321.321, -1, "# #/# #/#"));
             Assert.AreEqual("321 ?/? ?/?", dfUS.FormatRawCellContents(321.321, -1, "# ?/? ?/?"));
             Assert.AreEqual("321 ?/? / /", dfUS.FormatRawCellContents(321.321, -1, "# ?/? #/# #/#"));
+            */
+
+            //Bug54686 patch sets default behavior of # #/## if there is a failure to parse
+            Assert.AreEqual("321 1/3", dfUS.FormatRawCellContents(321.321, -1, "# #/# ?/?"));
+            Assert.AreEqual("321 1/3", dfUS.FormatRawCellContents(321.321, -1, "# #/# #/#"));
+            Assert.AreEqual("321 1/3", dfUS.FormatRawCellContents(321.321, -1, "# ?/? ?/?"));
+            Assert.AreEqual("321 1/3", dfUS.FormatRawCellContents(321.321, -1, "# ?/? #/# #/#"));
 
             // Where both p and n don't include a fraction, so cannot always be formatted
-            Assert.AreEqual("123", dfUS.FormatRawCellContents(-123.321, -1, "0 ?/?;0"));
+            //Assert.AreEqual("123", dfUS.FormatRawCellContents(-123.321, -1, "0 ?/?;0"));
+
+            //Bug54868 patch has a hit on the first string before the ";"
+            Assert.AreEqual("-123 1/3", dfUS.FormatRawCellContents(-123.321, -1, "0 ?/?;0"));
+
+            //Bug53150 formatting a whole number with fractions should just give the number
+            Assert.AreEqual("1", dfUS.FormatRawCellContents(1.0, -1, "# #/#"));
+            Assert.AreEqual("11", dfUS.FormatRawCellContents(11.0, -1, "# #/#"));
         }
 
         /**
@@ -507,11 +525,55 @@ namespace TestCases.SS.UserModel
             Assert.AreEqual(" -   ", dfUS.FormatRawCellContents(0.0, -1, "_-* #,##0.00_-;-* #,##0.00_-;_-* \"-\"??_-;_-@_-"));
             Assert.AreEqual(" $-   ", dfUS.FormatRawCellContents(0.0, -1, "_-$* #,##0.00_-;-$* #,##0.00_-;_-$* \"-\"??_-;_-@_-"));
         }
+        [Test]
+        public void TestErrors()
+        {
+            DataFormatter dfUS = new DataFormatter(System.Globalization.CultureInfo.GetCultureInfo("en-US"), true);
+
+            // Create a spreadsheet with some formula errors in it
+            IWorkbook wb = new HSSFWorkbook();
+            ISheet s = wb.CreateSheet();
+            IRow r = s.CreateRow(0);
+            ICell c = r.CreateCell(0, CellType.Error);
+
+            c.SetCellErrorValue(FormulaError.DIV0.Code);
+            Assert.AreEqual(FormulaError.DIV0.String, dfUS.FormatCellValue(c));
+
+            c.SetCellErrorValue(FormulaError.REF.Code);
+            Assert.AreEqual(FormulaError.REF.String, dfUS.FormatCellValue(c));
+        }
 
         /**
-         * TODO Fix these so that they work
+         * While we don't currently support using a locale code at
+         *  the start of a format string to format it differently, we
+         *  should at least handle it as it if wasn't there
          */
-        public void DISABLEDtestCustomFormats()
+        [Test]
+        public void TestDatesWithLocales()
+        {
+            DataFormatter dfUS = new DataFormatter(CultureInfo.GetCultureInfo("en-US"), true);
+
+            String dateFormatEnglish = "[$-409]mmmm dd yyyy  h:mm AM/PM";
+            String dateFormatChinese = "[$-804]mmmm dd yyyy  h:mm AM/PM";
+
+            // Check we format the English one correctly
+            double date = 26995.477777777778;
+            Assert.AreEqual(
+                    "November 27 1973  11:28 AM",
+                    dfUS.FormatRawCellContents(date, -1, dateFormatEnglish)
+            );
+
+            // Check that, in the absence of locale support, we handle
+            //  the Chinese one the same as the English one
+            Assert.AreEqual(
+                    "November 27 1973  11:28 AM",
+                    dfUS.FormatRawCellContents(date, -1, dateFormatChinese)
+            );
+        }
+
+
+        [Test]
+        public void TestCustomFormats()
         {
             DataFormatter dfUS = new DataFormatter(System.Globalization.CultureInfo.GetCultureInfo("en-US"), true);
             String fmt;
@@ -524,6 +586,68 @@ namespace TestCases.SS.UserModel
 
             fmt = "0 \"dollars and\" .00 \"cents\"";
             Assert.AreEqual("19 dollars and .99 cents", dfUS.FormatRawCellContents(19.99, -1, fmt));
+        }
+        /**
+         * ExcelStyleDateFormatter should work for Milliseconds too
+         */
+        [Test]
+        public void TestExcelStyleDateFormatterStringOnMillis()
+        {
+            // Test directly with the .000 style
+            SimpleDateFormat formatter1 = new ExcelStyleDateFormatter("ss.000");
+            CultureInfo culture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+            DateTime dt = DateTime.Now.Date;
+            Assert.AreEqual("00.001", formatter1.Format(dt.AddMilliseconds(1L), culture));
+            Assert.AreEqual("00.010", formatter1.Format(dt.AddMilliseconds(10L), culture));
+            Assert.AreEqual("00.100", formatter1.Format(dt.AddMilliseconds(100L), culture));
+            Assert.AreEqual("01.000", formatter1.Format(dt.AddMilliseconds(1000L), culture));
+            Assert.AreEqual("01.001", formatter1.Format(dt.AddMilliseconds(1001L), culture));
+            Assert.AreEqual("10.000", formatter1.Format(dt.AddMilliseconds(10000L), culture));
+            Assert.AreEqual("10.001", formatter1.Format(dt.AddMilliseconds(10001L), culture));
+
+            // Test directly with the .SSS style
+            SimpleDateFormat formatter2 = new ExcelStyleDateFormatter("ss.fff");
+
+            Assert.AreEqual("00.001", formatter2.Format(dt.AddMilliseconds(1L), culture));
+            Assert.AreEqual("00.010", formatter2.Format(dt.AddMilliseconds(10L), culture));
+            Assert.AreEqual("00.100", formatter2.Format(dt.AddMilliseconds(100L), culture));
+            Assert.AreEqual("01.000", formatter2.Format(dt.AddMilliseconds(1000L), culture));
+            Assert.AreEqual("01.001", formatter2.Format(dt.AddMilliseconds(1001L), culture));
+            Assert.AreEqual("10.000", formatter2.Format(dt.AddMilliseconds(10000L), culture));
+            Assert.AreEqual("10.001", formatter2.Format(dt.AddMilliseconds(10001L), culture));
+
+
+            // Test via DataFormatter
+            DataFormatter dfUS = new DataFormatter(culture, true);
+            Assert.AreEqual("01.010", dfUS.FormatRawCellContents(0.0000116898, -1, "ss.000"));
+        }
+        [Test]
+        public void TestBug54786()
+        {
+            DataFormatter formatter = new DataFormatter();
+            String format = "[h]\"\"h\"\" m\"\"m\"\"";
+            Assert.IsTrue(DateUtil.IsADateFormat(-1, format));
+            Assert.IsTrue(DateUtil.IsValidExcelDate(_15_MINUTES));
+
+            Assert.AreEqual("1h 0m", formatter.FormatRawCellContents(_15_MINUTES, -1, format, false));
+            Assert.AreEqual("0.041666667", formatter.FormatRawCellContents(_15_MINUTES, -1, "[h]'h'", false));
+            Assert.AreEqual("1h 0m\"", formatter.FormatRawCellContents(_15_MINUTES, -1, "[h]\"\"h\"\" m\"\"m\"\"\"", false));
+            Assert.AreEqual("1h", formatter.FormatRawCellContents(_15_MINUTES, -1, "[h]\"\"h\"\"", false));
+            Assert.AreEqual("h1", formatter.FormatRawCellContents(_15_MINUTES, -1, "\"\"h\"\"[h]", false));
+            Assert.AreEqual("h1", formatter.FormatRawCellContents(_15_MINUTES, -1, "\"\"h\"\"h", false));
+            Assert.AreEqual(" 60", formatter.FormatRawCellContents(_15_MINUTES, -1, " [m]", false));
+            Assert.AreEqual("h60", formatter.FormatRawCellContents(_15_MINUTES, -1, "\"\"h\"\"[m]", false));
+            Assert.AreEqual("m1", formatter.FormatRawCellContents(_15_MINUTES, -1, "\"\"m\"\"h", false));
+
+            try
+            {
+                Assert.AreEqual("1h 0m\"", formatter.FormatRawCellContents(_15_MINUTES, -1, "[h]\"\"h\"\" m\"\"m\"\"\"\"", false));
+                Assert.Fail("Catches exception because of invalid format, i.e. trailing quoting");
+            }
+            catch (Exception)
+            {
+                //Assert.IsTrue(e.Message.Contains("Cannot format given Object as a Number"));
+            }
         }
     }
 

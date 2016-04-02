@@ -35,12 +35,13 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<{0}", nodeName));
-            if(this.t!=null)
-                sw.Write(string.Format("<t xml:space=\"preserve\">{0}</t>", t));
-            sw.Write(">");
-            if (this.phoneticPr != null)
-                this.phoneticPr.Write(sw, "phoneticPr");
+            sw.Write(string.Format("<{0}>", nodeName));
+            if (this.t != null)
+            {
+                //TODO: diff has-space case and no-space case
+                 sw.Write(string.Format("<t xml:space=\"preserve\">{0}</t>", 
+                      XmlHelper.ExcelEncodeString(XmlHelper.EncodeXml(t))));
+            }
             if (this.r != null)
             {
                 foreach (CT_RElt x in this.r)
@@ -55,6 +56,8 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                     x.Write(sw, "rPh");
                 }
             }
+            if (this.phoneticPr != null)
+                this.phoneticPr.Write(sw, "phoneticPr");
             sw.Write(string.Format("</{0}>", nodeName));
         }
 
@@ -77,9 +80,6 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             }
             set
             {
-
-                if (rField ==null || rField.Count==0)
-                    this.xmltext = "<r><t xml:space=\"preserve\">"+XmlHelper.EncodeXml(value)+"</t></r>";
                 this.tField = value;
             }
         }
@@ -106,11 +106,12 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         public string XmlText
         {
             get {
-                if (rField != null && rField.Count > 0)
+                StringBuilder sb = new StringBuilder();
+                using (StringWriter sw = new StringWriter(sb))
                 {
-                    StringBuilder sb = new StringBuilder();
-                    using( StringWriter sw = new StringWriter(sb))
+                    if (rField != null && rField.Count > 0)
                     {
+
                         foreach (CT_RElt r in rField)
                         {
                             sw.Write("<r>");
@@ -127,7 +128,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                                 }
                                 if (r.rPr.u != null)
                                 {
-                                    sw.Write("<u val=\""+ r.rPr.u.val +"\"/>");
+                                    sw.Write("<u val=\"" + r.rPr.u.val + "\"/>");
                                 }
                                 if (r.rPr.color != null && r.rPr.color.theme > 0)
                                 {
@@ -161,14 +162,27 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                             }
                             if (r.t != null)
                             {
-                                sw.Write("<t xml:space=\"preserve\">");
+                                sw.Write("<t");
+                                if(r.t.IndexOf(' ')>=0)
+                                    sw.Write(" xml:space=\"preserve\"");
+                                sw.Write(">");
                                 sw.Write(XmlHelper.EncodeXml(r.t));
                                 sw.Write("</t>");
                             }
                             sw.Write("</r>");
                         }
-                        xmltext = sb.ToString();
                     }
+
+                    if (this.t != null)
+                    {
+                        sw.Write("<t");
+                        if (this.t.IndexOf(' ') >= 0)
+                            sw.Write(" xml:space=\"preserve\"");
+                        sw.Write(">");
+                        sw.Write(XmlHelper.EncodeXml(this.t));
+                        sw.Write("</t>");
+                    }
+                    xmltext = sb.ToString();
                 }
                 return xmltext; 
             }
@@ -240,6 +254,11 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
                     ctObj.t = childNode.InnerText.Replace("\r", "");
             }
             return ctObj;
+        }
+
+        public int SizeOfRArray()
+        {
+            return r.Count;
         }
     }
 }

@@ -39,13 +39,21 @@ namespace NPOI.XSSF.UserModel
 
         }
         [Test]
-        public void TestResize()
+        public void Resize()
         {
-            BaseTestResize(new XSSFClientAnchor(0, 0, 504825, 85725, (short)0, 0, (short)1, 8));
+            XSSFWorkbook wb = XSSFITestDataProvider.instance.OpenSampleWorkbook("resize_Compare.xlsx") as XSSFWorkbook;
+            XSSFDrawing dp = wb.GetSheetAt(0).CreateDrawingPatriarch() as XSSFDrawing;
+            List<XSSFShape> pics = dp.GetShapes();
+            XSSFPicture inpPic = (XSSFPicture)pics[(0)];
+            XSSFPicture cmpPic = (XSSFPicture)pics[(0)];
+
+            BaseTestResize(inpPic, cmpPic, 2.0, 2.0);
+            wb.Close();
         }
 
+
         [Test]
-        public void TestCreate()
+        public void Create()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
             XSSFSheet sheet = (XSSFSheet)wb.CreateSheet();
@@ -63,7 +71,7 @@ namespace NPOI.XSSF.UserModel
 
             XSSFClientAnchor anchor = new XSSFClientAnchor(0, 0, 0, 0, 1, 1, 10, 30);
             Assert.AreEqual(AnchorType.MoveAndResize, (AnchorType)anchor.AnchorType);
-            anchor.AnchorType = (int)AnchorType.DontMoveAndResize;
+            anchor.AnchorType = AnchorType.DontMoveAndResize;
             Assert.AreEqual(AnchorType.DontMoveAndResize, (AnchorType)anchor.AnchorType);
 
             XSSFPicture shape = (XSSFPicture)drawing.CreatePicture(anchor, jpegIdx);
@@ -82,7 +90,7 @@ namespace NPOI.XSSF.UserModel
          * See Bugzilla 50458
          */
         [Test]
-        public void TestShapeId()
+        public void IncrementShapeId()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
             XSSFSheet sheet = (XSSFSheet)wb.CreateSheet();
@@ -105,7 +113,7 @@ namespace NPOI.XSSF.UserModel
      * same image refrerred by mulitple sheets
      */
         [Test]
-        public void TestMultiRelationShips()
+        public void multiRelationShips()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
 
@@ -138,7 +146,7 @@ namespace NPOI.XSSF.UserModel
             drawing1 = sheet1.CreateDrawingPatriarch() as XSSFDrawing;
             XSSFPicture shape11 = (XSSFPicture)drawing1.GetShapes()[0];
             Assert.IsTrue(Arrays.Equals(shape1.PictureData.Data, shape11.PictureData.Data));
-            XSSFPicture shape22 = (XSSFPicture)drawing1.GetShapes()[0];
+            XSSFPicture shape22 = (XSSFPicture)drawing1.GetShapes()[1];
             Assert.IsTrue(Arrays.Equals(shape2.PictureData.Data, shape22.PictureData.Data));
 
             sheet2 = wb.GetSheetAt(1) as XSSFSheet;

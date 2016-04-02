@@ -164,11 +164,11 @@ namespace NPOI.SS.Util
             // so these Checks are currently N.Q.R.
             if (pRow < -1)
             {
-                throw new ArgumentException("row index may not be negative");
+                throw new ArgumentException("row index may not be negative, but had " + pRow);
             }
             if (pCol < -1)
             {
-                throw new ArgumentException("column index may not be negative");
+                throw new ArgumentException("column index may not be negative, but had " + pCol);
             }
             _sheetName = pSheetName;
             _rowIndex = pRow;
@@ -216,26 +216,22 @@ namespace NPOI.SS.Util
          */
         public static int ConvertColStringToIndex(String ref1)
         {
-
-            int pos = 0;
             int retval = 0;
-            for (int k = ref1.Length - 1; k >= 0; k--)
+            char[] refs = ref1.ToUpper().ToCharArray();
+            for (int k = 0; k < refs.Length; k++)
             {
-                char thechar = ref1[k];
+                char thechar = refs[k];
                 if (thechar == ABSOLUTE_REFERENCE_MARKER)
                 {
                     if (k != 0)
                     {
-                        throw new ArgumentException("Bad col ref format '"
-                                + ref1 + "'");
+                        throw new ArgumentException("Bad col ref format '" + ref1 + "'");
                     }
-                    break;
+                    continue;
                 }
-                // Character.getNumericValue() returns the values
-                //  10-35 for the letter A-Z
-                int shift = (int)Math.Pow(26, pos);
-                retval += (NPOI.Util.Character.GetNumericValue(thechar) - 9) * shift;
-                pos++;
+
+                // Character is uppercase letter, find relative value to A
+                retval = (retval * 26) + (thechar - 'A' + 1);
             }
             return retval - 1;
         }
@@ -333,7 +329,7 @@ namespace NPOI.SS.Util
             //  treat it as the 0th one
             int excelColNum = col + 1;
 
-            String colRef = "";
+            StringBuilder colRef = new StringBuilder(2);
             int colRemain = excelColNum;
 
             while (colRemain > 0)
@@ -344,10 +340,10 @@ namespace NPOI.SS.Util
 
                 // The letter A is at 65
                 char colChar = (char)(thisPart + 64);
-                colRef = colChar + colRef;
+                colRef.Insert(0, colChar);
             }
 
-            return colRef;
+            return colRef.ToString();
         }
 
         /**
@@ -483,9 +479,9 @@ namespace NPOI.SS.Util
             get
             {
                 return new String[] {
-				    _sheetName,
-				    (_rowIndex+1).ToString(CultureInfo.InvariantCulture),
-				   ConvertNumToColString(_colIndex)
+                    _sheetName,
+                    (_rowIndex+1).ToString(CultureInfo.InvariantCulture),
+                   ConvertNumToColString(_colIndex)
                 };
             }
         }
@@ -605,6 +601,8 @@ namespace NPOI.SS.Util
         }
         public override bool Equals(Object o)
         {
+            if (object.ReferenceEquals(this, o))
+                return true;
             if (!(o is CellReference))
             {
                 return false;
@@ -612,14 +610,18 @@ namespace NPOI.SS.Util
             CellReference cr = (CellReference)o;
             return _rowIndex == cr._rowIndex
                 && _colIndex == cr._colIndex
-                && _isRowAbs == cr._isColAbs
+                && _isRowAbs == cr._isRowAbs
                 && _isColAbs == cr._isColAbs;
         }
 
         public override int GetHashCode ()
         {
-            return _isRowAbs.GetHashCode () ^ _isColAbs.GetHashCode () ^
-                _rowIndex ^ _colIndex;
+            int result = 17;
+            result = 31 * result + _rowIndex;
+            result = 31 * result + _colIndex;
+            result = 31 * result + (_isRowAbs ? 1 : 0);
+            result = 31 * result + (_isColAbs ? 1 : 0);
+            return result;
         }
     }
 }

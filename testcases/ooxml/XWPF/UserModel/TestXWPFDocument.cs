@@ -25,7 +25,6 @@ namespace NPOI.XWPF.UserModel
     using NPOI.Util;
     using System.Xml.Serialization;
     using NPOI.OpenXmlFormats.Wordprocessing;
-    using NPOI.XWPF.Util;
 
     [TestFixture]
     public class TestXWPFDocument
@@ -139,7 +138,7 @@ namespace NPOI.XWPF.UserModel
             byte[] jpeg = XWPFTestDataSamples.GetImage("nature1.jpg");
             String relationId = doc.AddPictureData(jpeg, (int)PictureType.JPEG);
 
-            byte[] newJpeg = ((XWPFPictureData)doc.GetRelationById(relationId)).GetData();
+            byte[] newJpeg = ((XWPFPictureData)doc.GetRelationById(relationId)).Data;
             Assert.AreEqual(newJpeg.Length, jpeg.Length);
             for (int i = 0; i < jpeg.Length; i++)
             {
@@ -368,6 +367,25 @@ namespace NPOI.XWPF.UserModel
 
             doc.Package.Revert();
         }
+
+        [Test]
+        public void TestZeroLengthLibreOfficeDocumentWithWaterMarkHeader()
+        {
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("zero-length.docx");
+            POIXMLProperties properties = doc.GetProperties();
+
+            Assert.IsNotNull(properties.CoreProperties);
+
+            XWPFHeader headerArray = doc.GetHeaderArray(0);
+            Assert.AreEqual(1, headerArray.AllPictures.Count);
+            Assert.AreEqual("image1.png", headerArray.AllPictures[0].FileName);
+            Assert.AreEqual("", headerArray.Text);
+
+            ExtendedProperties extendedProperties = properties.ExtendedProperties;
+            Assert.IsNotNull(extendedProperties);
+            Assert.AreEqual(0, extendedProperties.GetUnderlyingProperties().Characters);
+        }
+
         [Test]
         public void TestSettings()
         {

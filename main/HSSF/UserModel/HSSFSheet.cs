@@ -49,6 +49,14 @@ namespace NPOI.HSSF.UserModel
     [Serializable]
     public class HSSFSheet : NPOI.SS.UserModel.ISheet
     {
+        /**
+         * width of 1px in columns with default width in units of 1/256 of a character width
+         */
+        private static float PX_DEFAULT = 32.00f;
+        /**
+         * width of 1px in columns with overridden width in units of 1/256 of a character width
+         */
+        private static float PX_MODIFIED = 36.56f;
 
         /**
          * Used for compile-time optimization.  This is the initial size for the collection of
@@ -106,7 +114,7 @@ namespace NPOI.HSSF.UserModel
         /// <returns>the cloned sheet</returns>
         public ISheet CloneSheet(HSSFWorkbook workbook)
         {
-            IDrawing iDrawing = this.DrawingPatriarch;/**Aggregate drawing records**/
+            IDrawing iDrawing = this.DrawingPatriarch;/*Aggregate drawing records*/
             HSSFSheet sheet = new HSSFSheet(workbook, _sheet.CloneSheet());
             int pos = sheet._sheet.FindFirstRecordLocBySid(DrawingRecord.sid);
             DrawingRecord dr = (DrawingRecord)sheet._sheet.FindFirstRecordBySid(DrawingRecord.sid);
@@ -463,6 +471,47 @@ namespace NPOI.HSSF.UserModel
             }
         }
 
+        private class RecordVisitor1 : RecordVisitor
+        {
+            private List<IDataValidation> hssfValidations;
+            private IWorkbook workbook;
+            public RecordVisitor1(List<IDataValidation> hssfValidations, IWorkbook workbook)
+            {
+                this.hssfValidations = hssfValidations;
+                this.workbook = workbook;
+                this.book = HSSFEvaluationWorkbook.Create(workbook);
+            }
+            private HSSFEvaluationWorkbook book;
+            public void VisitRecord(Record r)
+            {
+                if (!(r is DVRecord))
+                {
+                    return;
+                }
+                DVRecord dvRecord = (DVRecord)r;
+                CellRangeAddressList regions = dvRecord.CellRangeAddress.Copy();
+                DVConstraint constraint = DVConstraint.CreateDVConstraint(dvRecord, book);
+                HSSFDataValidation hssfDataValidation = new HSSFDataValidation(regions, constraint);
+                hssfDataValidation.ErrorStyle = (dvRecord.ErrorStyle);
+                hssfDataValidation.EmptyCellAllowed = (dvRecord.EmptyCellAllowed);
+                hssfDataValidation.SuppressDropDownArrow = (dvRecord.SuppressDropdownArrow);
+                hssfDataValidation.CreatePromptBox(dvRecord.PromptTitle, dvRecord.PromptText);
+                hssfDataValidation.ShowPromptBox = (dvRecord.ShowPromptOnCellSelected);
+                hssfDataValidation.CreateErrorBox(dvRecord.ErrorTitle, dvRecord.ErrorText);
+                hssfDataValidation.ShowErrorBox = (dvRecord.ShowErrorOnInvalidValue);
+                hssfValidations.Add(hssfDataValidation);
+            }
+        }
+
+        public List<IDataValidation> GetDataValidations()
+        {
+            DataValidityTable dvt = _sheet.GetOrCreateDataValidityTable();
+            List<IDataValidation> hssfValidations = new List<IDataValidation>();
+            RecordVisitor visitor = new RecordVisitor1(hssfValidations, Workbook);
+            dvt.VisitContainedRecords(visitor);
+            return hssfValidations;
+        }
+
         /// <summary>
         /// Creates a data validation object
         /// </summary>
@@ -520,6 +569,15 @@ namespace NPOI.HSSF.UserModel
         public int GetColumnWidth(int column)
         {
             return _sheet.GetColumnWidth(column);
+        }
+
+        public float GetColumnWidthInPixels(int column)
+        {
+            int cw = GetColumnWidth(column);
+            int def = DefaultColumnWidth * 256;
+            float px = (cw == def ? PX_DEFAULT : PX_MODIFIED);
+
+            return cw / px;
         }
 
         /// <summary>
@@ -727,7 +785,7 @@ namespace NPOI.HSSF.UserModel
         /// </returns>
         public IEnumerator GetRowEnumerator()
         {
-            return rows.Values.GetEnumerator();
+            return GetEnumerator();
         }
 
         /// <summary>
@@ -741,7 +799,7 @@ namespace NPOI.HSSF.UserModel
         /// </returns>
         public IEnumerator GetEnumerator()
         {
-            return GetRowEnumerator();
+            return rows.Values.GetEnumerator();
         }
 
         /// <summary>
@@ -1103,9 +1161,9 @@ namespace NPOI.HSSF.UserModel
         public void SetZoom(int numerator, int denominator)
         {
             if (numerator < 1 || numerator > 65535)
-                throw new ArgumentException("Numerator must be greater than 1 and less than 65536");
+                throw new ArgumentException("Numerator must be greater than 0 and less than 65536");
             if (denominator < 1 || denominator > 65535)
-                throw new ArgumentException("Denominator must be greater than 1 and less than 65536");
+                throw new ArgumentException("Denominator must be greater than 0 and less than 65536");
 
             SCLRecord sclRecord = new SCLRecord();
             sclRecord.Numerator = ((short)numerator);
@@ -1210,7 +1268,20 @@ namespace NPOI.HSSF.UserModel
                 _sheet.LeftCol = value;
             }
         }
+        /**
+         * Sets desktop window pane display area, when the
+         * file is first opened in a viewer.
+         *
+         * @param toprow  the top row to show in desktop window pane
+         * @param leftcol the left column to show in desktop window pane
+         */
+        public void ShowInPane(int toprow, int leftcol)
+        {
+            int maxrow = SpreadsheetVersion.EXCEL97.LastRowIndex;
+            if (toprow > maxrow) throw new ArgumentException("Maximum row number is " + maxrow);
 
+            ShowInPane((short)toprow, (short)leftcol);
+        }
         /// <summary>
         /// Sets desktop window pane display area, when the
         /// file is first opened in a viewer.
@@ -1490,8 +1561,9 @@ namespace NPOI.HSSF.UserModel
             // Update any formulas on this _sheet that point to
             //  rows which have been moved
             int sheetIndex = _workbook.GetSheetIndex(this);
+            String sheetName = _workbook.GetSheetName(sheetIndex);
             int externSheetIndex = book.CheckExternSheet(sheetIndex);
-            FormulaShifter shifter = FormulaShifter.CreateForRowShift(externSheetIndex, startRow, endRow, n);
+            FormulaShifter shifter = FormulaShifter.CreateForRowShift(externSheetIndex,sheetName, startRow, endRow, n);
             _sheet.UpdateFormulasAfterCellShift(shifter, externSheetIndex);
 
             int nSheets = _workbook.NumberOfSheets;
@@ -1632,7 +1704,6 @@ namespace NPOI.HSSF.UserModel
                     return _sheet.PageSettings.PrintSetup.HeaderMargin;
                 default:
                     return _sheet.PageSettings.GetMargin(margin);
-                    break;
             }
         }
 
@@ -1878,10 +1949,10 @@ namespace NPOI.HSSF.UserModel
                 }
             }
             EscherAggregate agg = (EscherAggregate)_sheet.FindFirstRecordBySid(EscherAggregate.sid);
-            if (null == agg)
+            if (null == agg || null == agg.GetEscherContainer())
             {
                 int pos = _sheet.AggregateDrawingRecords(dm, false);
-                if (-1 == pos)
+                if (-1 == pos || (agg = (EscherAggregate)_sheet.Records[(pos)]) == null || agg.GetEscherContainer() == null)
                 {
                     if (createIfMissing)
                     {
@@ -1896,7 +1967,6 @@ namespace NPOI.HSSF.UserModel
                         return null;
                     }
                 }
-                agg = (EscherAggregate)_sheet.Records[(pos)];
             }
             return new HSSFPatriarch(this, agg);
         }
@@ -2248,9 +2318,14 @@ namespace NPOI.HSSF.UserModel
             {
                 name = workbook.CreateBuiltInName(NameRecord.BUILTIN_FILTER_DB, sheetIndex + 1);
             }
-
+            int firstRow = range.FirstRow;
+            // if row was not given when constructing the range...
+            if (firstRow == -1)
+            {
+                firstRow = 0;
+            }
             // The built-in name must consist of a single Area3d Ptg.
-            Area3DPtg ptg = new Area3DPtg(range.FirstRow, range.LastRow,
+            Area3DPtg ptg = new Area3DPtg(firstRow, range.LastRow,
                     range.FirstColumn, range.LastColumn,
                     false, false, false, false, sheetIndex);
             name.NameDefinition = (new Ptg[] { ptg });
@@ -2267,7 +2342,7 @@ namespace NPOI.HSSF.UserModel
             for (int col = range.FirstColumn; col <= range.LastColumn; col++)
             {
                 p.CreateComboBox(new HSSFClientAnchor(0, 0, 0, 0,
-                        (short)col, range.FirstRow, (short)(col + 1), range.FirstRow + 1));
+                        (short)col, firstRow, (short)(col + 1), firstRow + 1));
             }
 
             return new HSSFAutoFilter(this);
@@ -2300,7 +2375,7 @@ namespace NPOI.HSSF.UserModel
                 if (shape is HSSFComment)
                 {
                     HSSFComment comment = (HSSFComment)shape;
-                    if (comment.Column == column && comment.Row == row)
+                    if (comment.HasPosition && comment.Column == column && comment.Row == row)
                     {
                         return comment;
                     }
@@ -2489,6 +2564,18 @@ namespace NPOI.HSSF.UserModel
             return _workbook.GetNameRecord(recIndex);
         }
 
+        /// <summary>
+        /// Returns the column outline level. Increased as you
+        /// put it into more groups (outlines), reduced as
+        /// you take it out of them.
+        /// </summary>
+        /// <param name="columnIndex"></param>
+        /// <returns></returns>
+        public int GetColumnOutlineLevel(int columnIndex)
+        {
+            return _sheet.GetColumnOutlineLevel(columnIndex);
+        }
+
         // Copy sheet based on logic posted by "brimars" on 2011-04-29 at http://npoi.codeplex.com/discussions/254536
         // That code was based on: http://www.coderanch.com/t/420958/open-source/Copying-sheet-excel-file-another
         // thanks to: Pierre Guilbert, 2011-04-14
@@ -2498,7 +2585,7 @@ namespace NPOI.HSSF.UserModel
         // for copying optimized sheets generated by MS SSRS 2008, because they only contain colors used in the document.)
         //
         // Original code comments:
-        /**
+        /*
          * @author jk
          * getted from http://jxls.cvs.sourceforge.net/jxls/jxls/src/java/org/jxls/util/Util.java?revision=1.8&view=markup
          * by Leonid Vysochyn 
@@ -2833,7 +2920,5 @@ namespace NPOI.HSSF.UserModel
             }
             return isNew;
         }
-
-        // end of POI CopySheets
     }
 }

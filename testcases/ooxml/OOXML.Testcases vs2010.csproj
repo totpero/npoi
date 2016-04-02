@@ -81,7 +81,7 @@
     </Reference>
     <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\NUnit 2.6.3\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\solution\Lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -99,8 +99,12 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="SS\Converter\TestExcelToHtmlConverterSuite.cs" />
     <Compile Include="SS\Format\TestCellFormatPart.cs" />
+    <Compile Include="SS\Formula\Eval\TestXSSFCircularReferences.cs" />
+    <Compile Include="SS\Formula\Functions\TestProper.cs" />
     <Compile Include="SS\TestWorkbookFactory.cs" />
+    <Compile Include="SS\UserModel\BaseTestXCell.cs" />
     <Compile Include="TestDetectAsOOXML.cs" />
     <Compile Include="TestEmbeded.cs" />
     <Compile Include="TestPOIXMLDocument.cs" />
@@ -111,26 +115,32 @@
     <Compile Include="XSSF\IO\TestLoadSaveXSSF.cs" />
     <Compile Include="XSSF\Model\TestCalculationChain.cs" />
     <Compile Include="XSSF\Model\TestCommentsTable.cs" />
+    <Compile Include="XSSF\Model\TestExternalLinksTable.cs" />
     <Compile Include="XSSF\Model\TestMapInfo.cs" />
     <Compile Include="XSSF\Model\TestSharedStringsTable.cs" />
     <Compile Include="XSSF\Model\TestStylesTable.cs" />
+    <Compile Include="XSSF\UserModel\Charts\TestXSSFCategoryAxis.cs" />
     <Compile Include="XSSF\UserModel\Charts\TestXSSFChartAxis.cs" />
     <Compile Include="XSSF\UserModel\Charts\TestXSSFChartLegend.cs" />
+    <Compile Include="XSSF\UserModel\Charts\TestXSSFLineChartData.cs" />
     <Compile Include="XSSF\UserModel\Charts\TestXSSFManualLayout.cs" />
     <Compile Include="XSSF\UserModel\Charts\TestXSSFScatterChartData.cs" />
     <Compile Include="XSSF\UserModel\Charts\TestXSSFValueAxis.cs" />
     <Compile Include="XSSF\UserModel\TestFormulaEvaluatorOnXSSF.cs" />
-    <Compile Include="XSSF\UserModel\TestSheetShiftRows.cs" />
+    <Compile Include="XSSF\UserModel\TestMissingWorkbookOnXSSF.cs" />
+    <Compile Include="XSSF\UserModel\TestMultiSheetFormulaEvaluatorOnXSSF.cs" />
     <Compile Include="XSSF\UserModel\Extensions\TestXSSFBorder.cs" />
     <Compile Include="XSSF\UserModel\Extensions\TestXSSFCellFill.cs" />
     <Compile Include="XSSF\UserModel\Helpers\TestColumnHelper.cs" />
     <Compile Include="XSSF\UserModel\Helpers\TestHeaderFooterHelper.cs" />
     <Compile Include="XSSF\UserModel\TestSheetHiding.cs" />
+    <Compile Include="XSSF\UserModel\TestUnfixedBugs.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFBugs.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFCell.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFCellStyle.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFChart.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFChartSheet.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFColGrouping.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFColor.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFComment.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFConditionalFormatting.cs" />
@@ -146,13 +156,19 @@
     <Compile Include="XSSF\UserModel\TestXSSFName.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFPicture.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFPictureData.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFPivotTable.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFPrintSetup.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFRichTextString.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFRow.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFSheet.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFSheetAutosizeColumn.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFSheetRowGrouping.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFSheetShiftRows.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFSheetUpdateArrayFormulas.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFSimpleShape.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFTable.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFTextParagraph.cs" />
+    <Compile Include="XSSF\UserModel\TestXSSFTextRun.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFVMLDrawing.cs" />
     <Compile Include="XSSF\UserModel\TestXSSFWorkbook.cs" />
     <Compile Include="XSSF\Util\TestCTColComparator.cs" />
@@ -160,12 +176,16 @@
     <Compile Include="XSSF\Util\TestNumericRanges.cs" />
     <Compile Include="XSSF\XSSFITestDataProvider.cs" />
     <Compile Include="XSSF\XSSFTestDataSamples.cs" />
+    <Compile Include="XWPF\Extractor\TestExternalEntities.cs" />
     <Compile Include="XWPF\Extractor\TestXWPFWordExtractor.cs" />
     <Compile Include="XWPF\Model\TestXWPFDecorators.cs" />
     <Compile Include="XWPF\Model\TestXWPFHeaderFooterPolicy.cs" />
     <Compile Include="XWPF\TestAllExtendedProperties.cs" />
     <Compile Include="XWPF\TestDocumentProtection.cs" />
     <Compile Include="XWPF\TestPackageCorePropertiesGetKeywords.cs" />
+    <Compile Include="XWPF\TestXWPFBugs.cs" />
+    <Compile Include="XWPF\UserModel\TestChangeTracking.cs" />
+    <Compile Include="XWPF\UserModel\TestXWPFBugs.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFDocument.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFFootnotes.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFHeader.cs" />
@@ -174,6 +194,7 @@
     <Compile Include="XWPF\UserModel\TestXWPFParagraph.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFPictureData.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFRun.cs" />
+    <Compile Include="XWPF\UserModel\TestXWPFSDT.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFSmartTag.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFStyles.cs" />
     <Compile Include="XWPF\UserModel\TestXWPFTable.cs" />

@@ -13,7 +13,7 @@ namespace NPOI.OpenXml4Net.OPC
     public class PackageRelationship
     {
 
-        private static Uri containerRelationshipPart = new Uri("/_rels/.rels",UriKind.RelativeOrAbsolute);
+        private static Uri containerRelationshipPart = PackagingUriHelper.ParseUri("/_rels/.rels", UriKind.RelativeOrAbsolute);
 
         /* XML markup */
 
@@ -117,7 +117,7 @@ namespace NPOI.OpenXml4Net.OPC
 
         /* Getters */
 
-        public Uri ContainerPartRelationship
+        public static Uri ContainerPartRelationship
         {
             get
             {

@@ -39,7 +39,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
         private bool horizontalFieldSpecified;
 
-        private ST_VerticalAlignment verticalField;
+        private ST_VerticalAlignment verticalField = ST_VerticalAlignment.bottom;
 
         private bool verticalFieldSpecified;
 
@@ -94,17 +94,21 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "horizontal", this.horizontal.ToString());
-            XmlHelper.WriteAttribute(sw, "vertical", this.vertical.ToString());
+            if(this.horizontal != ST_HorizontalAlignment.general)
+                XmlHelper.WriteAttribute(sw, "horizontal", this.horizontal.ToString());
+            if (this.vertical != ST_VerticalAlignment.bottom)
+                XmlHelper.WriteAttribute(sw, "vertical", this.vertical.ToString());
             XmlHelper.WriteAttribute(sw, "textRotation", this.textRotation);
-            XmlHelper.WriteAttribute(sw, "wrapText", this.wrapText);
+            if(this.wrapText)
+                XmlHelper.WriteAttribute(sw, "wrapText", this.wrapText);
             XmlHelper.WriteAttribute(sw, "indent", this.indent);
             XmlHelper.WriteAttribute(sw, "relativeIndent", this.relativeIndent);
-            XmlHelper.WriteAttribute(sw, "justifyLastLine", this.justifyLastLine);
-            XmlHelper.WriteAttribute(sw, "shrinkToFit", this.shrinkToFit);
+            if (justifyLastLine)
+                XmlHelper.WriteAttribute(sw, "justifyLastLine", this.justifyLastLine);
+            if(shrinkToFit)
+                XmlHelper.WriteAttribute(sw, "shrinkToFit", this.shrinkToFit);
             XmlHelper.WriteAttribute(sw, "readingOrder", this.readingOrder);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
         public bool IsSetHorizontal()
@@ -143,7 +147,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             }
         }
         [XmlAttribute]
-        [DefaultValue(ST_VerticalAlignment.top)]
+        [DefaultValue(ST_VerticalAlignment.bottom)]
         public ST_VerticalAlignment vertical
         {
             get
@@ -350,6 +354,21 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             {
                 this.readingOrderFieldSpecified = value;
             }
+        }
+
+        internal CT_CellAlignment Copy()
+        {
+            CT_CellAlignment align = new CT_CellAlignment();
+            align.horizontal = this.horizontal;
+            align.vertical = this.vertical;
+            align.wrapText = this.wrapText;
+            align.shrinkToFit = this.shrinkToFit;
+            align.textRotation = this.textRotation;
+            align.justifyLastLine = this.justifyLastLine;
+            align.readingOrder = this.readingOrder;
+            align.relativeIndent = this.relativeIndent;
+            align.indent = this.indent;
+            return align;
         }
     }
 }

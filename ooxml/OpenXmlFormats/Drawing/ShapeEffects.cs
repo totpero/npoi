@@ -60,7 +60,8 @@ namespace NPOI.OpenXmlFormats.Dml
             sw.Write(string.Format("<a:{0} xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"", nodeName));
             XmlHelper.WriteAttribute(sw, "r:embed", this.embed);
             XmlHelper.WriteAttribute(sw, "r:link", this.link);
-            XmlHelper.WriteAttribute(sw, "cstate", this.cstate.ToString());
+            if(cstate!= ST_BlipCompression.none)
+                XmlHelper.WriteAttribute(sw, "cstate", this.cstate.ToString());
             sw.Write(">");
             if (this.extLst != null)
                 this.extLst.Write(sw, "extLst");
@@ -1858,7 +1859,7 @@ namespace NPOI.OpenXmlFormats.Dml
             if (this.gradFill != null)
                 this.gradFill.Write(sw, "gradFill");
             if (this.blipFill != null)
-                this.blipFill.Write(sw, "blipFill");
+                this.blipFill.Write(sw, "a:blipFill");
             if (this.pattFill != null)
                 this.pattFill.Write(sw, "pattFill");
             if (this.grpFill != null)
@@ -2134,6 +2135,56 @@ namespace NPOI.OpenXmlFormats.Dml
             this.srgbClrField = new CT_SRgbColor();
             return srgbClrField;
         }
+
+        public bool IsSetHslClr()
+        {
+            return this.hslClrField != null;
+        }
+
+        public bool IsSetPrstClr()
+        {
+            return this.prstClrField != null;
+        }
+
+        public bool IsSetSchemeClr()
+        {
+            return this.schemeClrField != null;
+        }
+
+        public bool IsSetScrgbClr()
+        {
+            return this.scrgbClrField != null;
+        }
+
+        public bool IsSetSysClr()
+        {
+            return this.sysClrField != null;
+        }
+
+        public void UnsetHslClr()
+        {
+            this.hslClrField = null;
+        }
+
+        public void UnsetPrstClr()
+        {
+            this.prstClrField = null;
+        }
+
+        public void UnsetSchemeClr()
+        {
+            this.schemeClrField = null;
+        }
+
+        public void UnsetScrgbClr()
+        {
+            this.scrgbClrField = null;
+        }
+
+        public void UnsetSysClr()
+        {
+            this.sysClrField = null;
+        }
     }
 
     [Serializable]
@@ -2368,7 +2419,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
+            sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "pos", this.pos);
             sw.Write(">");
             if (this.scrgbClr != null)
@@ -2383,7 +2434,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.schemeClr.Write(sw, "schemeClr");
             if (this.prstClr != null)
                 this.prstClr.Write(sw, "prstClr");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.Write(string.Format("</{0}>", nodeName));
         }
 
         [XmlElement(Order = 0)]
@@ -2741,7 +2792,7 @@ namespace NPOI.OpenXmlFormats.Dml
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<a:{0}", nodeName));
+            sw.Write(string.Format("<{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "dpi", this.dpi);
             XmlHelper.WriteAttribute(sw, "rotWithShape", this.rotWithShape);
             sw.Write(">");
@@ -2753,7 +2804,7 @@ namespace NPOI.OpenXmlFormats.Dml
                 this.tile.Write(sw, "tile");
             if (this.stretch != null)
                 this.stretch.Write(sw, "stretch");
-            sw.Write(string.Format("</a:{0}>", nodeName));
+            sw.Write(string.Format("</{0}>", nodeName));
         }
 
         [XmlElement(Order = 0)]

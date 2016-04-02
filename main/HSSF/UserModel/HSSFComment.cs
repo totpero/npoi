@@ -32,6 +32,9 @@ namespace NPOI.HSSF.UserModel
         private const int FILL_TYPE_SOLID = 0;
         private const int FILL_TYPE_PICTURE = 3;
 
+        private const int GROUP_SHAPE_PROPERTY_DEFAULT_VALUE = 655362;
+        private const int GROUP_SHAPE_HIDDEN_MASK = 0x1000002;
+        private const int GROUP_SHAPE_NOT_HIDDEN_MASK = unchecked((int)0xFEFFFFFD);
 
         private NoteRecord _note = null;
 
@@ -77,7 +80,7 @@ namespace NPOI.HSSF.UserModel
         internal override void AfterInsert(HSSFPatriarch patriarch)
         {
             base.AfterInsert(patriarch);
-            patriarch.getBoundAggregate().AddTailRecord(NoteRecord);
+            patriarch.GetBoundAggregate().AddTailRecord(NoteRecord);
         }
 
         protected override EscherContainerRecord CreateSpContainer()
@@ -88,7 +91,7 @@ namespace NPOI.HSSF.UserModel
             opt.RemoveEscherProperty(EscherProperties.TEXT__TEXTRIGHT);
             opt.RemoveEscherProperty(EscherProperties.TEXT__TEXTTOP);
             opt.RemoveEscherProperty(EscherProperties.TEXT__TEXTBOTTOM);
-            opt.SetEscherProperty(new EscherSimpleProperty(EscherProperties.GROUPSHAPE__PRINT, false, false, 655362));
+            opt.SetEscherProperty(new EscherSimpleProperty(EscherProperties.GROUPSHAPE__PRINT, false, false, GROUP_SHAPE_PROPERTY_DEFAULT_VALUE));
             return spContainer;
         }
 
@@ -124,10 +127,12 @@ namespace NPOI.HSSF.UserModel
             get { return base.ShapeId; }
             set
             {
+                if (value > 65535)
+                    throw new ArgumentException("Cannot add more than 65535 shapes");
                 base.ShapeId = (value);
                 CommonObjectDataSubRecord cod = (CommonObjectDataSubRecord)GetObjRecord().SubRecords[0];
-                cod.ObjectId = ((short)(value % 1024));
-                _note.ShapeId = (value % 1024);
+                cod.ObjectId = value;
+                _note.ShapeId = value;
             }
         }
 
@@ -150,6 +155,7 @@ namespace NPOI.HSSF.UserModel
             set
             {
                 if (_note != null) _note.Flags = value ? NoteRecord.NOTE_VISIBLE : NoteRecord.NOTE_HIDDEN;
+                SetHidden(!value);
             }
         }
 
@@ -206,6 +212,35 @@ namespace NPOI.HSSF.UserModel
         {
             get { return _note; }
         }
+
+        /**
+         * Do we know which cell this comment belongs to?
+         */
+        public bool HasPosition
+        {
+            get
+            {
+                if (_note == null) return false;
+                if (this.Column < 0 || this.Row < 0) return false;
+                return true;
+            }
+        }
+
+        public IClientAnchor ClientAnchor
+        {
+            get
+            {
+                HSSFAnchor ha = base.Anchor;
+                if (ha is IClientAnchor)
+                {
+                    return (IClientAnchor)ha;
+                }
+
+                throw new InvalidCastException("Anchor can not be changed in "
+                        + typeof(IClientAnchor).Name);
+            }
+        }
+
         public override int ShapeType
         {
             get
@@ -222,7 +257,7 @@ namespace NPOI.HSSF.UserModel
         internal override void AfterRemove(HSSFPatriarch patriarch)
         {
             base.AfterRemove(patriarch);
-            patriarch.getBoundAggregate().RemoveTailRecord(this.NoteRecord);
+            patriarch.GetBoundAggregate().RemoveTailRecord(this.NoteRecord);
         }
         internal override HSSFShape CloneShape()
         {
@@ -258,6 +293,19 @@ namespace NPOI.HSSF.UserModel
         {
             EscherSimpleProperty property = (EscherSimpleProperty)GetOptRecord().Lookup(EscherProperties.FILL__PATTERNTEXTURE);
             return property == null ? 0 : property.PropertyValue;
+        }
+        private void SetHidden(bool value)
+        {
+            EscherSimpleProperty property = (EscherSimpleProperty)GetOptRecord().Lookup(EscherProperties.GROUPSHAPE__PRINT);
+            // see http://msdn.microsoft.com/en-us/library/dd949807(v=office.12).aspx
+            if (value)
+            {
+                SetPropertyValue(new EscherSimpleProperty(EscherProperties.GROUPSHAPE__PRINT, false, false, property.PropertyValue | GROUP_SHAPE_HIDDEN_MASK));
+            }
+            else
+            {
+                SetPropertyValue(new EscherSimpleProperty(EscherProperties.GROUPSHAPE__PRINT, false, false, property.PropertyValue & GROUP_SHAPE_NOT_HIDDEN_MASK));
+            }
         }
     }
 }

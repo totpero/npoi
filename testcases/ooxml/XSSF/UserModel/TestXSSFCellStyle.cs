@@ -79,6 +79,9 @@ namespace NPOI.XSSF.UserModel
             stylesTable.PutCellStyleXf(cellStyleXf);
             stylesTable.PutCellXf(cellXf);
             cellStyle = new XSSFCellStyle(1, 1, stylesTable, null);
+
+            Assert.IsNotNull(stylesTable.GetFillAt(1).GetCTFill().patternFill);
+            Assert.AreEqual(ST_PatternType.darkGray, stylesTable.GetFillAt(1).GetCTFill().patternFill.patternType);
         }
         [Test]
         public void TestGetSetBorderBottom()
@@ -283,6 +286,150 @@ namespace NPOI.XSSF.UserModel
             Assert.IsFalse(ctBorder.IsSetTop());
         }
         [Test]
+        public void TestGetSetBorderThin()
+        {
+            cellStyle.BorderTop = (BorderStyle.Thin);
+            Assert.AreEqual(BorderStyle.Thin, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.thin, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderMedium()
+        {
+            cellStyle.BorderTop = (BorderStyle.Medium);
+            Assert.AreEqual(BorderStyle.Medium, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.medium, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderThick()
+        {
+            cellStyle.BorderTop = (BorderStyle.Thick);
+            Assert.AreEqual(BorderStyle.Thick, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.thick, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderHair()
+        {
+            cellStyle.BorderTop = (BorderStyle.Hair);
+            Assert.AreEqual(BorderStyle.Hair, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.hair, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderDotted()
+        {
+            cellStyle.BorderTop = (BorderStyle.Dotted);
+            Assert.AreEqual(BorderStyle.Dotted, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.dotted, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderDashed()
+        {
+            cellStyle.BorderTop = (BorderStyle.Dashed);
+            Assert.AreEqual(BorderStyle.Dashed, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.dashed, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderDashDot()
+        {
+            cellStyle.BorderTop = (BorderStyle.DashDot);
+            Assert.AreEqual(BorderStyle.DashDot, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.dashDot, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderDashDotDot()
+        {
+            cellStyle.BorderTop=(BorderStyle.DashDotDot);
+            Assert.AreEqual(BorderStyle.DashDotDot, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.dashDotDot, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderMediumDashDot()
+        {
+            cellStyle.BorderTop = (BorderStyle.MediumDashDot);
+            Assert.AreEqual(BorderStyle.MediumDashDot, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.mediumDashDot, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderMediumDashDotDot()
+        {
+            cellStyle.BorderTop = (BorderStyle.MediumDashDotDot);
+            Assert.AreEqual(BorderStyle.MediumDashDotDot, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.mediumDashDotDot, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderMediumDashed()
+        {
+            cellStyle.BorderTop=(BorderStyle.MediumDashed);
+            Assert.AreEqual(BorderStyle.MediumDashed, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.mediumDashed, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderSlantDashDot()
+        {
+            cellStyle.BorderTop = (BorderStyle.SlantedDashDot);
+            Assert.AreEqual(BorderStyle.SlantedDashDot, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.slantDashDot, ctBorder.top.style);
+        }
+        [Test]
+        public void TestGetSetBorderDouble()
+        {
+            cellStyle.BorderTop=(BorderStyle.Double);
+            Assert.AreEqual(BorderStyle.Double, cellStyle.BorderTop);
+            int borderId = (int)cellStyle.GetCoreXf().borderId;
+            Assert.IsTrue(borderId > 0);
+            //check changes in the underlying xml bean
+            CT_Border ctBorder = stylesTable.GetBorderAt(borderId).GetCTBorder();
+            Assert.AreEqual(ST_BorderStyle.@double, ctBorder.top.style);
+        }
+
+        [Test]
         public void TestGetSetBottomBorderColor()
         {
             //defaults
@@ -482,7 +629,7 @@ namespace NPOI.XSSF.UserModel
             byte[] rgb = ((XSSFColor)cellStyle.FillBackgroundColorColor).GetRgb();
             Assert.AreEqual(Color.Cyan.ToArgb(), Color.FromArgb(rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF).ToArgb());
             //another border was added to the styles table
-            Assert.AreEqual(num, stylesTable.GetFills().Count);
+            Assert.AreEqual(num + 1, stylesTable.GetFills().Count);
 
             //passing null unsets the color
             cellStyle.SetFillBackgroundColor(null);
@@ -498,6 +645,8 @@ namespace NPOI.XSSF.UserModel
             XSSFCellStyle style1 = (XSSFCellStyle)wb1.CreateCellStyle();
             Assert.AreEqual(IndexedColors.Automatic.Index, style1.FillBackgroundColor);
             Assert.IsNull(style1.FillBackgroundColorColor);
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wb1));
 
             //compatibility with HSSF
             HSSFWorkbook wb2 = new HSSFWorkbook();
@@ -515,6 +664,8 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(style2.BorderLeft, style1.BorderLeft);
             Assert.AreEqual(style2.BorderRight, style1.BorderRight);
             Assert.AreEqual(style2.BorderTop, style1.BorderTop);
+
+            wb2.Close();
         }
 
         [Ignore]
@@ -553,12 +704,16 @@ namespace NPOI.XSSF.UserModel
                 Assert.AreEqual(IndexedColors.BrightGreen.Index, style.FillForegroundColor);
                 Assert.AreEqual(4, styles.GetFills().Count);
             }
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wb));
         }
         [Test]
         public void TestGetFillPattern()
         {
+            //???
+            //assertEquals(STPatternType.INT_DARK_GRAY-1, cellStyle.getFillPattern());
 
-            Assert.AreEqual(FillPattern.NoFill, cellStyle.FillPattern);
+            Assert.AreEqual((int)ST_PatternType.darkGray, (int)cellStyle.FillPattern);
 
             int num = stylesTable.GetFills().Count;
             cellStyle.FillPattern = (FillPattern.SolidForeground);
@@ -698,6 +853,13 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(fnt, clone.GetFont());
             Assert.AreEqual(18, clone.DataFormat);
             Assert.AreEqual(2, wb.NumberOfFonts);
+
+            clone.Alignment = HorizontalAlignment.Left;
+            clone.DataFormat = 17;
+            Assert.AreEqual(HorizontalAlignment.Right, orig.Alignment);
+            Assert.AreEqual(18, orig.DataFormat);
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wb));
         }
         /**
          * Cloning one XSSFCellStyle onto Another, different XSSFWorkbooks
@@ -768,6 +930,9 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual("TestingFont", reload.GetFont().FontName);
             Assert.AreEqual(fmtClone.GetFormat("Test##"), reload.DataFormat);
             Assert.IsFalse(fmtClone.GetFormat("Test##") == fmt.GetFormat("Test##"));
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wbOrig));
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wbClone));
         }
 
         /**
@@ -779,11 +944,112 @@ namespace NPOI.XSSF.UserModel
         {
             XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("52348.xlsx");
             StylesTable st = workbook.GetStylesSource();
-            Assert.AreEqual(0, st.GetStyleXfsSize());
+            Assert.AreEqual(0, st.StyleXfsSize);
 
 
             XSSFCellStyle style = workbook.CreateCellStyle() as XSSFCellStyle; // no exception at this point
             Assert.IsNull(style.GetStyleXf());
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(workbook));
+        }
+        /**
+         * Avoid ArrayIndexOutOfBoundsException  when getting cell style
+         * in a workbook that has an empty xf table.
+         */
+        [Test]
+        public void TestBug55650()
+        {
+            XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("52348.xlsx");
+            StylesTable st = workbook.GetStylesSource();
+            Assert.AreEqual(0, st.StyleXfsSize);
+
+            // no exception at this point
+            XSSFCellStyle style = workbook.GetSheetAt(0).GetRow(0).GetCell(0).CellStyle as XSSFCellStyle;
+            Assert.IsNull(style.GetStyleXf());
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(workbook));
+        }
+
+        [Test]
+        public void TestShrinkToFit()
+        {
+            // Existing file
+            XSSFWorkbook wb = XSSFTestDataSamples.OpenSampleWorkbook("ShrinkToFit.xlsx");
+            ISheet s = wb.GetSheetAt(0);
+            IRow r = s.GetRow(0);
+            ICellStyle cs = r.GetCell(0).CellStyle;
+
+            Assert.AreEqual(true, cs.ShrinkToFit);
+
+            // New file
+            XSSFWorkbook wbOrig = new XSSFWorkbook();
+            s = wbOrig.CreateSheet();
+            r = s.CreateRow(0);
+
+            cs = wbOrig.CreateCellStyle();
+            cs.ShrinkToFit = (/*setter*/false);
+            r.CreateCell(0).CellStyle = (/*setter*/cs);
+
+            cs = wbOrig.CreateCellStyle();
+            cs.ShrinkToFit = (/*setter*/true);
+            r.CreateCell(1).CellStyle = (/*setter*/cs);
+
+            // Write out1, Read, and check
+            wb = XSSFTestDataSamples.WriteOutAndReadBack(wbOrig) as XSSFWorkbook;
+            s = wb.GetSheetAt(0);
+            r = s.GetRow(0);
+            Assert.AreEqual(false, r.GetCell(0).CellStyle.ShrinkToFit);
+            Assert.AreEqual(true, r.GetCell(1).CellStyle.ShrinkToFit);
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wb));
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wbOrig));
+        }
+
+        [Test]
+        public void TestSetColor()
+        {
+            IWorkbook wb = new XSSFWorkbook();
+            ISheet sheet = wb.CreateSheet();
+            IRow row = sheet.CreateRow(0);
+
+            //CreationHelper ch = wb.GetCreationHelper();
+            IDataFormat format = wb.CreateDataFormat();
+            ICell cell = row.CreateCell(1);
+            cell.SetCellValue("somEvalue");
+            ICellStyle cellStyle = wb.CreateCellStyle();
+
+
+            cellStyle.DataFormat = (/*setter*/format.GetFormat("###0"));
+
+            cellStyle.FillBackgroundColor = (/*setter*/IndexedColors.DarkBlue.Index);
+            cellStyle.FillForegroundColor = (/*setter*/IndexedColors.DarkBlue.Index);
+            cellStyle.FillPattern = FillPattern.SolidForeground;
+
+            cellStyle.Alignment = HorizontalAlignment.Right;
+            cellStyle.VerticalAlignment = VerticalAlignment.Top;
+
+            cell.CellStyle = (/*setter*/cellStyle);
+
+            /*OutputStream stream = new FileOutputStream("C:\\temp\\CellColor.xlsx");
+            try {
+                wb.Write(stream);
+            } finally {
+                stream.Close();
+            }*/
+
+            IWorkbook wbBack = XSSFTestDataSamples.WriteOutAndReadBack(wb);
+            ICell cellBack = wbBack.GetSheetAt(0).GetRow(0).GetCell(1);
+            Assert.IsNotNull(cellBack);
+            ICellStyle styleBack = cellBack.CellStyle;
+            Assert.AreEqual(IndexedColors.DarkBlue.Index, styleBack.FillBackgroundColor);
+            Assert.AreEqual(IndexedColors.DarkBlue.Index, styleBack.FillForegroundColor);
+            Assert.AreEqual(HorizontalAlignment.Right, styleBack.Alignment);
+            Assert.AreEqual(VerticalAlignment.Top, styleBack.VerticalAlignment);
+            Assert.AreEqual(FillPattern.SolidForeground, styleBack.FillPattern);
+
+            wbBack.Close();
+
+            wb.Close();
         }
 
     }

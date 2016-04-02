@@ -31,6 +31,7 @@ namespace NPOI.SS.Formula
     using NPOI.SS.UserModel;
     using NPOI.SS.Formula.PTG;
     using NPOI.Util;
+    using NPOI.SS.Formula.Function;
 
     /**
      * Evaluates formula cells.<p/>
@@ -113,16 +114,8 @@ namespace NPOI.SS.Formula
         /* package */
         internal IEvaluationName GetName(String name, int sheetIndex)
         {
-            NamePtg namePtg = _workbook.GetName(name, sheetIndex).CreatePtg();
-
-            if (namePtg == null)
-            {
-                return null;
-            }
-            else
-            {
-                return _workbook.GetName(namePtg);
-            }
+            IEvaluationName evalName = _workbook.GetName(name, sheetIndex);
+            return evalName;
         }
         private static bool IsDebugLogEnabled()
         {
@@ -428,12 +421,12 @@ namespace NPOI.SS.Formula
         /**
          * whether print detailed messages about the next formula evaluation
          */
-	    private bool dbgEvaluationOutputForNextEval = false;
+        private bool dbgEvaluationOutputForNextEval = false;
 
-	    // special logger for formula evaluation output (because of possibly very large output)
-	    private POILogger EVAL_LOG = POILogFactory.GetLogger("POI.FormulaEval");
-	    // current indent level for evalution; negative value for no output
-	    private int dbgEvaluationOutputIndent = -1;
+        // special logger for formula evaluation output (because of possibly very large output)
+        private POILogger EVAL_LOG = POILogFactory.GetLogger("POI.FormulaEval");
+        // current indent level for evalution; negative value for no output
+        private int dbgEvaluationOutputIndent = -1;
 
         // visibility raised for testing
         /* package */
@@ -453,7 +446,7 @@ namespace NPOI.SS.Formula
                 dbgIndentStr = "                                                                                                    ";
                 dbgIndentStr = dbgIndentStr.Substring(0, Math.Min(dbgIndentStr.Length, dbgEvaluationOutputIndent * 2));
                 EVAL_LOG.Log(POILogger.WARN, dbgIndentStr
-                                   + "- evaluateFormula('" + ec.GetRefEvaluatorForCurrentSheet().SheetName
+                                   + "- evaluateFormula('" + ec.GetRefEvaluatorForCurrentSheet().SheetNameRange
                                    + "'/" + new CellReference(ec.RowIndex, ec.ColumnIndex).FormatAsString()
                                    + "): " + Arrays.ToString(ptgs).Replace("\\Qorg.apache.poi.ss.formula.ptg.\\E", ""));
                 dbgEvaluationOutputIndent++;
@@ -536,7 +529,10 @@ namespace NPOI.SS.Formula
                             int dist = attrPtg.Data;
                             i += CountTokensToBeSkipped(ptgs, i, dist);
                             Ptg nextPtg = ptgs[i + 1];
-                            if (ptgs[i] is AttrPtg && nextPtg is FuncVarPtg)
+                            if (ptgs[i] is AttrPtg && nextPtg is FuncVarPtg &&
+                                // in order to verify that there is no third param, we need to check 
+                                // if we really have the IF next or some other FuncVarPtg as third param, e.g. ROW()/COLUMN()!
+                                ((FuncVarPtg)nextPtg).FunctionIndex == FunctionMetadataRegistry.FUNCTION_INDEX_IF)
                             {
                                 // this is an if statement without a false param (as opposed to MissingArgPtg as the false param)
                                 i++;
@@ -625,11 +621,11 @@ namespace NPOI.SS.Formula
             return result;
         }
         /**
- * Calculates the number of tokens that the evaluator should skip upon reaching a tAttrSkip.
- *
- * @return the number of tokens (starting from <c>startIndex+1</c>) that need to be skipped
- * to achieve the specified <c>distInBytes</c> skip distance.
- */
+         * Calculates the number of tokens that the evaluator should skip upon reaching a tAttrSkip.
+         *
+         * @return the number of tokens (starting from <c>startIndex+1</c>) that need to be skipped
+         * to achieve the specified <c>distInBytes</c> skip distance.
+         */
         private static int CountTokensToBeSkipped(Ptg[] ptgs, int startIndex, int distInBytes)
         {
             int remBytes = distInBytes;
@@ -687,25 +683,21 @@ namespace NPOI.SS.Formula
 
             if (ptg is NamePtg)
             {
-                // named ranges, macro functions
+                // Named ranges, macro functions
                 NamePtg namePtg = (NamePtg)ptg;
                 IEvaluationName nameRecord = _workbook.GetName(namePtg);
-                if (nameRecord.IsFunctionName)
-                {
-                    return new NameEval(nameRecord.NameText);
-                }
-                if (nameRecord.HasFormula)
-                {
-                    return EvaluateNameFormula(nameRecord.NameDefinition, ec);
-                }
-
-                throw new Exception("Don't now how To evalate name '" + nameRecord.NameText + "'");
+                return GetEvalForNameRecord(nameRecord, ec);
             }
-            if (ptg is NameXPtg)
+            if (ptg is NameXPtg) 
             {
-                return ec.GetNameXEval(((NameXPtg)ptg));
+                // Externally defined named ranges or macro functions
+                return ProcessNameEval(ec.GetNameXEval((NameXPtg)ptg), ec);
             }
-
+            if (ptg is NameXPxg)
+            {
+                // Externally defined named ranges or macro functions
+                return ProcessNameEval(ec.GetNameXEval((NameXPxg)ptg), ec);
+            }
             if (ptg is IntPtg)
             {
                 return new NumberEval(((IntPtg)ptg).Value);
@@ -737,14 +729,20 @@ namespace NPOI.SS.Formula
             }
             if (ptg is Ref3DPtg)
             {
-                Ref3DPtg rptg = (Ref3DPtg)ptg;
-                return ec.GetRef3DEval(rptg.Row, rptg.Column, rptg.ExternSheetIndex);
+                return ec.GetRef3DEval((Ref3DPtg)ptg);
             }
-            if (ptg is Area3DPtg)
+
+            if (ptg is Ref3DPxg)
             {
-                Area3DPtg aptg = (Area3DPtg)ptg;
-                return ec.GetArea3DEval(aptg.FirstRow, aptg.FirstColumn, aptg.LastRow, aptg.LastColumn, aptg.ExternSheetIndex);
+                return ec.GetRef3DEval((Ref3DPxg)ptg);
             }
+            if (ptg is Area3DPtg) {
+               return ec.GetArea3DEval((Area3DPtg)ptg);
+           }
+           if (ptg is Area3DPxg) {
+               return ec.GetArea3DEval((Area3DPxg)ptg);
+           }
+
             if (ptg is RefPtg)
             {
                 RefPtg rptg = (RefPtg)ptg;
@@ -772,6 +770,29 @@ namespace NPOI.SS.Formula
             throw new RuntimeException("Unexpected ptg class (" + ptg.GetType().Name + ")");
         }
 
+        private ValueEval ProcessNameEval(ValueEval eval, OperationEvaluationContext ec)
+        {
+            if (eval is ExternalNameEval)
+            {
+                IEvaluationName name = ((ExternalNameEval)eval).Name;
+                return GetEvalForNameRecord(name, ec);
+            }
+            return eval;
+        }
+        private ValueEval GetEvalForNameRecord(IEvaluationName nameRecord, OperationEvaluationContext ec)
+        {
+            if (nameRecord.IsFunctionName)
+            {
+                return new FunctionNameEval(nameRecord.NameText);
+            }
+            if (nameRecord.HasFormula)
+            {
+                return EvaluateNameFormula(nameRecord.NameDefinition, ec);
+            }
+
+            throw new Exception("Don't now how to Evalate name '" + nameRecord.NameText + "'");
+        }
+        
         internal ValueEval EvaluateNameFormula(Ptg[] ptgs, OperationEvaluationContext ec)
         {
             if (ptgs.Length == 1)

@@ -53,8 +53,7 @@ namespace NPOI.XSSF.UserModel
          */
         internal static CT_GroupShape Prototype()
         {
-            if (prototype == null)
-            {
+
                 CT_GroupShape shape = new CT_GroupShape();
 
 
@@ -79,7 +78,6 @@ namespace NPOI.XSSF.UserModel
                 p4.y = (0);
 
                 prototype = shape;
-            }
             return prototype;
         }
 
@@ -93,7 +91,7 @@ namespace NPOI.XSSF.UserModel
         public XSSFTextBox CreateTextbox(XSSFChildAnchor anchor)
         {
             CT_Shape ctShape = ctGroup.AddNewSp();
-            ctShape.Set(XSSFSimpleShape.Prototype());
+            ctShape.Set(XSSFSimpleShape.GetPrototype());
 
             XSSFTextBox shape = new XSSFTextBox(GetDrawing(), ctShape);
             shape.parent = this;
@@ -113,7 +111,7 @@ namespace NPOI.XSSF.UserModel
         public XSSFSimpleShape CreateSimpleShape(XSSFChildAnchor anchor)
         {
             CT_Shape ctShape = ctGroup.AddNewSp();
-            ctShape.Set(XSSFSimpleShape.Prototype());
+            ctShape.Set(XSSFSimpleShape.GetPrototype());
 
             XSSFSimpleShape shape = new XSSFSimpleShape(GetDrawing(), ctShape);
             shape.parent = (this);
@@ -165,7 +163,7 @@ namespace NPOI.XSSF.UserModel
         }
 
 
-        public CT_GroupShape GetCT_GroupShape()
+        public CT_GroupShape GetCTGroupShape()
         {
             return ctGroup;
         }

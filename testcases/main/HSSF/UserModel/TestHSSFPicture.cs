@@ -16,17 +16,16 @@
 */
 namespace TestCases.HSSF.UserModel
 {
-    using NPOI.HSSF.UserModel;
-    using NUnit.Framework;
-
-    using NPOI.SS.UserModel;
-    using TestCases.SS.UserModel;
-    using NPOI.Util;
-    using System.Collections.Generic;
-    using System.Collections;
     using System;
-    using NPOI.HSSF.Model;
+    using System.Collections;
+    using System.Collections.Generic;
     using NPOI.DDF;
+    using NPOI.HSSF.Model;
+    using NPOI.HSSF.UserModel;
+    using NPOI.SS.UserModel;
+    using NPOI.Util;
+    using NUnit.Framework;
+    using TestCases.SS.UserModel;
 
     /**
      * Test <c>HSSFPicture</c>.
@@ -43,16 +42,24 @@ namespace TestCases.HSSF.UserModel
         }
 
         [Test]
-        public void TestResize()
+        public void Resize()
         {
-            BaseTestResize(new HSSFClientAnchor(0, 0, 848, 240, (short)0, 0, (short)1, 9));
+            HSSFWorkbook wb = HSSFTestDataSamples.OpenSampleWorkbook("resize_Compare.xls");
+            HSSFPatriarch dp = wb.GetSheetAt(0).CreateDrawingPatriarch() as HSSFPatriarch;
+            IList<HSSFShape> pics = dp.Children;
+            HSSFPicture inpPic = (HSSFPicture)pics[(0)];
+            HSSFPicture cmpPic = (HSSFPicture)pics[(1)];
+
+            BaseTestResize(inpPic, cmpPic, 2.0, 2.0);
+            //wb.Close();
         }
+
 
         /**
          * Bug # 45829 reported ArithmeticException (/ by zero) when resizing png with zero DPI.
          */
         [Test]
-        public void Test45829()
+        public void Bug45829()
         {
             HSSFWorkbook wb = new HSSFWorkbook();
             NPOI.SS.UserModel.ISheet sh1 = wb.CreateSheet();
@@ -64,7 +71,7 @@ namespace TestCases.HSSF.UserModel
             pic.Resize();
         }
         [Test]
-        public void TestAddPictures()
+        public void AddPictures()
         {
             IWorkbook wb = new HSSFWorkbook();
 
@@ -158,7 +165,7 @@ namespace TestCases.HSSF.UserModel
             Assert.IsTrue(Arrays.Equals(data4, ((HSSFPicture)((HSSFPatriarch)dr).Children[(3)]).PictureData.Data));
         }
         [Test]
-        public void TestBSEPictureRef()
+        public void BSEPictureRef()
         {
             HSSFWorkbook wb = new HSSFWorkbook();
 
@@ -185,7 +192,7 @@ namespace TestCases.HSSF.UserModel
             Assert.AreEqual(bse.Ref, 3);
         }
         [Test]
-        public void TestReadExistingImage()
+        public void ReadExistingImage()
         {
             HSSFWorkbook wb = HSSFTestDataSamples.OpenSampleWorkbook("drawings.xls");
             HSSFSheet sheet = wb.GetSheet("picture") as HSSFSheet;
@@ -196,7 +203,7 @@ namespace TestCases.HSSF.UserModel
             Assert.AreEqual(picture.FileName, "test");
         }
         [Test]
-        public void TestSetGetProperties()
+        public void SetGetProperties()
         {
             HSSFWorkbook wb = new HSSFWorkbook();
 
@@ -220,5 +227,55 @@ namespace TestCases.HSSF.UserModel
             p1 = (HSSFPicture)dr.Children[0];
             Assert.AreEqual(p1.FileName, "aaa");
         }
+
+        [Test]
+        public void Bug49658()
+        {
+            // test if inserted EscherMetafileBlip will be read again
+            IWorkbook wb = new HSSFWorkbook();
+
+            byte[] pictureDataEmf = POIDataSamples.GetDocumentInstance().ReadFile("vector_image.emf");
+            int indexEmf = wb.AddPicture(pictureDataEmf, PictureType.EMF);
+            byte[] pictureDataPng = POIDataSamples.GetSpreadSheetInstance().ReadFile("logoKarmokar4.png");
+            int indexPng = wb.AddPicture(pictureDataPng, PictureType.PNG);
+            byte[] pictureDataWmf = POIDataSamples.GetSlideShowInstance().ReadFile("santa.wmf");
+            int indexWmf = wb.AddPicture(pictureDataWmf, PictureType.WMF);
+
+            ISheet sheet = wb.CreateSheet();
+            HSSFPatriarch patriarch = sheet.CreateDrawingPatriarch() as HSSFPatriarch;
+            ICreationHelper ch = wb.GetCreationHelper();
+
+            IClientAnchor anchor = ch.CreateClientAnchor();
+            anchor.Col1 = (/*setter*/2);
+            anchor.Col2 = (/*setter*/5);
+            anchor.Row1 = (/*setter*/1);
+            anchor.Row2 = (/*setter*/6);
+            patriarch.CreatePicture(anchor, indexEmf);
+
+            anchor = ch.CreateClientAnchor();
+            anchor.Col1 = (/*setter*/2);
+            anchor.Col2 = (/*setter*/5);
+            anchor.Row1 = (/*setter*/10);
+            anchor.Row2 = (/*setter*/16);
+            patriarch.CreatePicture(anchor, indexPng);
+
+            anchor = ch.CreateClientAnchor();
+            anchor.Col1 = (/*setter*/6);
+            anchor.Col2 = (/*setter*/9);
+            anchor.Row1 = (/*setter*/1);
+            anchor.Row2 = (/*setter*/6);
+            patriarch.CreatePicture(anchor, indexWmf);
+
+
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb as HSSFWorkbook);
+            byte[] pictureDataOut = (wb.GetAllPictures()[0] as HSSFPictureData).Data;
+            Assert.IsTrue(Arrays.Equals(pictureDataEmf, pictureDataOut));
+
+            byte[] wmfNoHeader = new byte[pictureDataWmf.Length - 22];
+            Array.Copy(pictureDataWmf, 22, wmfNoHeader, 0, pictureDataWmf.Length - 22);
+            pictureDataOut = (wb.GetAllPictures()[2] as HSSFPictureData).Data;
+            Assert.IsTrue(Arrays.Equals(wmfNoHeader, pictureDataOut));
+        }
+
     }
 }

@@ -102,12 +102,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DDF\TestEscherDump.cs" />
     <Compile Include="HPSF\Basic\TestClassID.cs" />
     <Compile Include="HPSF\Basic\TestHPSFBugs.cs" />
     <Compile Include="HPSF\Extractor\TestHPSFPropertiesExtractor.cs" />
     <Compile Include="HPSF\TestVariantSupport.cs" />
-    <Compile Include="HSSF\Converter\TestExcelToHtmlConverterSuite.cs" />
     <Compile Include="HSSF\EventModel\TestAbortableListener.cs" />
+    <Compile Include="HSSF\Extractor\TestOldExcelExtractor.cs" />
     <Compile Include="HSSF\Model\HSSFTestModelHelper.cs" />
     <Compile Include="HSSF\Model\TestDrawingAggregate.cs" />
     <Compile Include="HSSF\Model\TestDrawingShapes.cs" />
@@ -124,6 +125,7 @@
     <Compile Include="HSSF\Record\Chart\TestSerToCrtRecord.cs" />
     <Compile Include="HSSF\Record\Chart\TestShtPropsRecord.cs" />
     <Compile Include="HSSF\Record\TestDConRefRecord.cs" />
+    <Compile Include="HSSF\Record\TestPLVRecord.cs" />
     <Compile Include="HSSF\Record\TestUnicodeString.cs" />
     <Compile Include="HSSF\UserModel\TestComment.cs" />
     <Compile Include="HSSF\UserModel\TestEmbeddedObjects.cs" />
@@ -139,6 +141,7 @@
     <Compile Include="POIFS\EventFileSystem\TestPOIFSReaderRegistry.cs" />
     <Compile Include="POIFS\FileSystem\ReaderWriter.cs" />
     <Compile Include="POIFS\FileSystem\TestEntryUtils.cs" />
+    <Compile Include="POIFS\FileSystem\TestFileSystemBugs.cs" />
     <Compile Include="POIFS\FileSystem\TestFilteringDirectoryNode.cs" />
     <Compile Include="POIFS\FileSystem\TestNPOIFSFileSystem.cs" />
     <Compile Include="POIFS\FileSystem\TestNPOIFSMiniStore.cs" />
@@ -151,16 +154,61 @@
     <Compile Include="POIFS\Storage\TestBlockListImpl.cs" />
     <Compile Include="POIFS\Storage\TestHeaderBlockReading.cs" />
     <Compile Include="POIFS\Storage\TestHeaderBlockWriting.cs" />
+    <Compile Include="POITestCase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SS\Formula\Atp\TestDateParser.cs" />
+    <Compile Include="SS\Formula\Atp\TestIfError.cs" />
     <Compile Include="SS\Formula\Atp\TestNetworkdaysFunction.cs" />
     <Compile Include="SS\Formula\Atp\TestWorkdayCalculator.cs" />
     <Compile Include="SS\Formula\Atp\TestWorkdayFunction.cs" />
+    <Compile Include="SS\Formula\Eval\BaseTestCircularReferences.cs" />
+    <Compile Include="SS\Formula\Eval\TestHSSFCircularReferences.cs" />
+    <Compile Include="SS\Formula\Eval\TestMultiSheetEval.cs" />
+    <Compile Include="SS\Formula\Functions\CountifsTests.cs" />
+    <Compile Include="SS\Formula\Functions\RefValueImplementation.cs" />
+    <Compile Include="SS\Formula\Functions\TestBin2Dec.cs" />
+    <Compile Include="SS\Formula\Functions\TestCode.cs" />
+    <Compile Include="SS\Formula\Functions\TestCodeFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestComplex.cs" />
+    <Compile Include="SS\Formula\Functions\TestComplexFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestDec2Bin.cs" />
+    <Compile Include="SS\Formula\Functions\TestDec2Hex.cs" />
+    <Compile Include="SS\Formula\Functions\TestDelta.cs" />
+    <Compile Include="SS\Formula\Functions\TestDeltaFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestDGetFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestDStarFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestEDate.cs" />
+    <Compile Include="SS\Formula\Functions\BaseTestFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestEOMonth.cs" />
+    <Compile Include="SS\Formula\Functions\TestFactDoubleFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestFixed.cs" />
+    <Compile Include="SS\Formula\Functions\TestFixedFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestHex2Dec.cs" />
+    <Compile Include="SS\Formula\Functions\TestImaginaryFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestImRealFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestIndirectFunctionFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestIntercept.cs" />
+    <Compile Include="SS\Formula\Functions\TestIPMT.cs" />
+    <Compile Include="SS\Formula\Functions\TestLogicalFunction.cs" />
+    <Compile Include="SS\Formula\Functions\TestMatchFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestMirr.cs" />
+    <Compile Include="SS\Formula\Functions\TestOct2Dec.cs" />
+    <Compile Include="SS\Formula\Functions\TestPercentile.cs" />
+    <Compile Include="SS\Formula\Functions\TestPPMT.cs" />
+    <Compile Include="SS\Formula\Functions\TestQuotient.cs" />
+    <Compile Include="SS\Formula\Functions\TestQuotientFunctionsFromSpreadsheet.cs" />
     <Compile Include="SS\Formula\Functions\TestRank.cs" />
+    <Compile Include="SS\Formula\Functions\TestReptFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestRomanFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestSlope.cs" />
     <Compile Include="SS\Formula\Functions\TestSumifs.cs" />
+    <Compile Include="SS\Formula\Functions\TestWeekNumFunctionsFromSpreadsheet.cs" />
+    <Compile Include="SS\Formula\Functions\TestWeekNumFunctionsFromSpreadsheet2013.cs" />
     <Compile Include="SS\Formula\TestFunctionRegistry.cs" />
     <Compile Include="SS\Formula\TestMissingWorkbook.cs" />
     <Compile Include="SS\UserModel\Charts\TestDataSources.cs" />
+    <Compile Include="SS\UserModel\TestFractionFormat.cs" />
+    <Compile Include="SS\Util\TestSheetUtil.cs" />
     <Compile Include="Util\TestBitField.cs" />
     <Compile Include="Util\TestByteField.cs" />
     <Compile Include="Util\TestHexDump.cs" />
@@ -237,7 +285,6 @@
     <Compile Include="DDF\TestEscherBlipRecord.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DDF\TestEscherBlipWMFRecord.cs" />
     <Compile Include="DDF\TestEscherBoolProperty.cs" />
     <Compile Include="DDF\TestEscherBSERecord.cs" />
     <Compile Include="DDF\TestEscherChildAnchorRecord.cs" />
@@ -265,7 +312,6 @@
     <Compile Include="POIFS\FileSystem\TestOffice2007XMLException.cs" />
     <Compile Include="POIFS\FileSystem\TestPOIFSFileSystem.cs" />
     <Compile Include="POIFS\FileSystem\TestPropertySorter.cs" />
-    <Compile Include="Util\TestClassID.cs" />
     <Compile Include="HPSF\Basic\TestEmptyProperties.cs" />
     <Compile Include="HPSF\Basic\TestMetaDataIPI.cs" />
     <Compile Include="HPSF\Basic\TestReadAllFiles.cs" />
@@ -394,7 +440,7 @@
     <Compile Include="HSSF\UserModel\TestSheetShiftRows.cs" />
     <Compile Include="HSSF\UserModel\TestUnfixedBugs.cs" />
     <Compile Include="HSSF\UserModel\TestUnicodeWorkbook.cs" />
-    <Compile Include="HSSF\UserModel\TestUppercaseWorkbook.cs" />
+    <Compile Include="HSSF\UserModel\TestNonStandardWorkbookStreamNames.cs" />
     <Compile Include="HSSF\UserModel\TestWorkbook.cs" />
     <Compile Include="HSSF\UserModel\TestFormulaEvaluatorBugs.cs" />
     <Compile Include="HSSF\UserModel\TestFormulas.cs" />
@@ -481,7 +527,6 @@
     <Compile Include="SS\Formula\Eval\EvalInstances.cs" />
     <Compile Include="SS\Formula\Eval\Forked\TestForkedEvaluator.cs" />
     <Compile Include="SS\Formula\Eval\TestAreaEval.cs" />
-    <Compile Include="SS\Formula\Eval\TestCircularReferences.cs" />
     <Compile Include="SS\Formula\Eval\TestDivideEval.cs" />
     <Compile Include="SS\Formula\Eval\TestEqualEval.cs" />
     <Compile Include="SS\Formula\Eval\TestExternalFunction.cs" />

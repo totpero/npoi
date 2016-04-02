@@ -24,6 +24,8 @@ using NPOI.XSSF.Model;
 using System.Collections.Generic;
 using System.Xml;
 using NPOI.OpenXmlFormats.Dml;
+using NPOI.SS.Util;
+using NPOI.Util;
 
 
 namespace NPOI.XSSF.UserModel
@@ -92,7 +94,7 @@ namespace NPOI.XSSF.UserModel
         }
 
 
-        protected override void Commit()
+        protected internal override void Commit()
         {
             PackagePart part = GetPackagePart();
             Stream out1 = part.GetOutputStream();
@@ -113,12 +115,12 @@ namespace NPOI.XSSF.UserModel
          *                  to the sheet.
          * @return      the newly Created textbox.
          */
-        public ITextbox CreateTextbox(IClientAnchor anchor)
+        public XSSFTextBox CreateTextbox(IClientAnchor anchor)
         {
             long shapeId = newShapeId();
             CT_TwoCellAnchor ctAnchor = CreateTwoCellAnchor(anchor);
             CT_Shape ctShape = ctAnchor.AddNewSp();
-            ctShape.Set(XSSFSimpleShape.Prototype());
+            ctShape.Set(XSSFSimpleShape.GetPrototype());
             ctShape.nvSpPr.cNvPr.id=(uint)shapeId;
             XSSFTextBox shape = new XSSFTextBox(this, ctShape);
             shape.anchor = (XSSFClientAnchor)anchor;
@@ -145,6 +147,7 @@ namespace NPOI.XSSF.UserModel
             ctShape.Set(XSSFPicture.Prototype());
 
             ctShape.nvPicPr.cNvPr.id = (uint)shapeId;
+            ctShape.nvPicPr.cNvPr.name = "Picture " + shapeId;
 
             XSSFPicture shape = new XSSFPicture(this, ctShape);
             shape.anchor = anchor;
@@ -210,7 +213,7 @@ namespace NPOI.XSSF.UserModel
             long shapeId = newShapeId();
             CT_TwoCellAnchor ctAnchor = CreateTwoCellAnchor(anchor);
             CT_Shape ctShape = ctAnchor.AddNewSp();
-            ctShape.Set(XSSFSimpleShape.Prototype());
+            ctShape.Set(XSSFSimpleShape.GetPrototype());
             ctShape.nvSpPr.cNvPr.id=(uint)(shapeId);
             XSSFSimpleShape shape = new XSSFSimpleShape(this, ctShape);
             shape.anchor = anchor;
@@ -272,15 +275,26 @@ namespace NPOI.XSSF.UserModel
             NPOI.OpenXmlFormats.Vml.CT_Shape vmlShape = vml.newCommentShape();
             if (ca.IsSet())
             {
+                // convert offsets from emus to pixels since we get a DrawingML-anchor
+                // but create a VML Drawing
+                int dx1Pixels = ca.Dx1 / Units.EMU_PER_PIXEL;
+                int dy1Pixels = ca.Dy1 / Units.EMU_PER_PIXEL;
+                int dx2Pixels = ca.Dx2 / Units.EMU_PER_PIXEL;
+                int dy2Pixels = ca.Dy2 / Units.EMU_PER_PIXEL;
                 String position =
-                        ca.Col1 + ", 0, " + ca.Row1 + ", 0, " +
-                        ca.Col2 + ", 0, " + ca.Row2 + ", 0";
+                        ca.Col1 + ", " + dx1Pixels + ", " +
+                        ca.Row1 + ", " + dy1Pixels + ", " +
+                        ca.Col2 + ", " + dx2Pixels + ", " +
+                        ca.Row2 + ", " + dy2Pixels;
                 vmlShape.GetClientDataArray(0).SetAnchorArray(0, position);
             }
-            XSSFComment shape = new XSSFComment(comments, comments.CreateComment(), vmlShape);
-            shape.Column = (ca.Col1);
-            shape.Row = (ca.Row1);
-            return shape;
+            String ref1 = new CellReference(ca.Row1, ca.Col1).FormatAsString();
+            if (comments.FindCellComment(ref1) != null)
+            {
+                throw new ArgumentException("Multiple cell comments in one cell are not allowed, cell: " + ref1);
+            }
+
+            return new XSSFComment(comments, comments.NewComment(ref1), vmlShape);
         }
 
         /**
@@ -337,11 +351,11 @@ namespace NPOI.XSSF.UserModel
             ST_EditAs aditAs;
             switch (anchor.AnchorType)
             {
-                case (int)AnchorType.DontMoveAndResize: 
+                case AnchorType.DontMoveAndResize: 
                     aditAs = ST_EditAs.absolute; break;
-                case (int)AnchorType.MoveAndResize: 
+                case AnchorType.MoveAndResize: 
                     aditAs = ST_EditAs.twoCell; break;
-                case (int)AnchorType.MoveDontResize: 
+                case AnchorType.MoveDontResize: 
                     aditAs = ST_EditAs.oneCell; break;
                 default: 
                     aditAs = ST_EditAs.oneCell;

@@ -71,7 +71,8 @@ namespace NPOI.SS.UserModel
      */
     public class DataFormatter
     {
-
+        private static String defaultFractionWholePartFormat = "#";
+        private static String defaultFractionFractionPartFormat = "#/##";
         /** Pattern to find a number FormatBase: "0" or  "#" */
         private static string numPattern = "[0#]+";
 
@@ -91,9 +92,20 @@ namespace NPOI.SS.UserModel
      * Allowed colours are: Black, Blue, Cyan, Green,
      *  Magenta, Red, White, Yellow, "Color n" (1<=n<=56)
      */
-        private static string colorPattern = "(\\[BLACK\\])|(\\[BLUE\\])|(\\[CYAN\\])|(\\[GREEN\\])|" +
+        private static Regex colorPattern = new Regex("(\\[BLACK\\])|(\\[BLUE\\])|(\\[CYAN\\])|(\\[GREEN\\])|" +
             "(\\[MAGENTA\\])|(\\[RED\\])|(\\[WHITE\\])|(\\[YELLOW\\])|" +
-            "(\\[COLOR\\s*\\d\\])|(\\[COLOR\\s*[0-5]\\d\\])";
+            "(\\[COLOR\\s*\\d\\])|(\\[COLOR\\s*[0-5]\\d\\])", RegexOptions.IgnoreCase);
+
+        /**
+         * A regex to identify a fraction pattern.
+         * This requires that replaceAll("\\?", "#") has already been called 
+         */
+        private static Regex fractionPattern = new Regex("(?:([#\\d]+)\\s+)?(#+)\\s*\\/\\s*([#\\d]+)");
+
+        /**
+         * A regex to strip junk out of fraction formats
+         */
+        private static Regex fractionStripper = new Regex("(\"[^\"]*\")|([^ \\?#\\d\\/]+)");
         /**
       * Cells formatted with a date or time format and which contain invalid date or time values
      *  show 255 pound signs ("#").
@@ -286,7 +298,7 @@ namespace NPOI.SS.UserModel
         private FormatBase CreateFormat(double cellValue, int formatIndex, String sFormat)
         {
             // remove color Formatting if present
-            String formatStr = Regex.Replace(sFormat, colorPattern, "", RegexOptions.IgnoreCase);
+            String formatStr = colorPattern.Replace(sFormat, "");
 
             // Strip off the locale information, we use an instance-wide locale for everything
             MatchCollection matches = Regex.Matches(formatStr, localePatternGroup);
@@ -334,28 +346,29 @@ namespace NPOI.SS.UserModel
             }
 
             // Excel supports fractions in format strings, which Java doesn't
-            if (formatStr.IndexOf("#/#") >= 0 || formatStr.IndexOf("?/?") >= 0)
+            if (formatStr.IndexOf("#/") >= 0 || formatStr.IndexOf("?/") >= 0)
             {
-                // Strip custom text in quotes and escaped characters for now as it can cause performance problems in fractions.
-                String strippedFormatStr = formatStr.Replace("\\\\ ", " ").Replace("\\\\.", "").Replace("\"[^\"]*\"", " ");
-
-                strippedFormatStr = RegexDoubleBackslashAny.Replace(strippedFormatStr, " ");
-                strippedFormatStr = RegexAnyInDoubleQuote.Replace(strippedFormatStr, " ");
-                strippedFormatStr = RegexContinueWs.Replace(strippedFormatStr, " ");
-                bool ok = true;
-                foreach (String part in strippedFormatStr.Split(";".ToCharArray()))
+                String[] chunks = formatStr.Split(";".ToCharArray());
+                for (int i = 0; i < chunks.Length; i++)
                 {
-                    int indexOfFraction = IndexOfFraction(part);
-                    if (indexOfFraction == -1 || indexOfFraction != LastIndexOfFraction(part))
+                    String chunk = chunks[i].Replace("?", "#");
+                    //Match matcher = fractionStripper.Match(chunk);
+                    //chunk = matcher.Replace(" ");
+                    chunk = fractionStripper.Replace(chunk, " ");
+                    chunk = chunk.Replace(" +", " ");
+                    Match fractionMatcher = fractionPattern.Match(chunk);
+                    //take the first match
+                    if (fractionMatcher.Success)
                     {
-                        ok = false;
-                        break;
+                        String wholePart = (fractionMatcher.Groups[1] == null||!fractionMatcher.Groups[1].Success) ? "" : defaultFractionWholePartFormat;
+                        return new FractionFormat(wholePart, fractionMatcher.Groups[3].Value);
                     }
                 }
-                if (ok)
-                {
-                    return new FractionFormat(strippedFormatStr);
-                }
+
+                // Strip custom text in quotes and escaped characters for now as it can cause performance problems in fractions.
+                //String strippedFormatStr = formatStr.replaceAll("\\\\ ", " ").replaceAll("\\\\.", "").replaceAll("\"[^\"]*\"", " ").replaceAll("\\?", "#");
+                //System.out.println("formatStr: "+strippedFormatStr);
+                return new FractionFormat(defaultFractionWholePartFormat, defaultFractionFractionPartFormat);
             }
 
 
@@ -392,6 +405,10 @@ namespace NPOI.SS.UserModel
             formatStr = formatStr.Replace("\\ ", " ");
             formatStr = formatStr.Replace("\\/", "/");
             formatStr = formatStr.Replace(";@", "");
+            formatStr = formatStr.Replace("\"/\"", "/"); // "/" is escaped for no reason in: mm"/"dd"/"yyyy
+            formatStr = formatStr.Replace("\"\"", "'");	// replace Excel quoting with Java style quoting
+            formatStr = formatStr.Replace("\\\\T", "'T'"); // Quote the T is iso8601 style dates
+
             bool hasAmPm = Regex.IsMatch(formatStr, amPmPattern);
             if (hasAmPm)
             {
@@ -420,11 +437,59 @@ namespace NPOI.SS.UserModel
             StringBuilder sb = new StringBuilder();
             char[] chars = formatStr.ToCharArray();
             bool mIsMonth = true;
+            bool isElapsed = false;
             ArrayList ms = new ArrayList();
             for (int j = 0; j < chars.Length; j++)
             {
                 char c = chars[j];
-                if (c == 'h' || c == 'H')
+                if (c == '\'')
+                {
+                    sb.Append(c);
+                    j++;
+
+                    // skip until the next quote
+                    while (j < chars.Length)
+                    {
+                        c = chars[j];
+                        sb.Append(c);
+                        if (c == '\'')
+                        {
+                            break;
+                        }
+                        j++;
+                    }
+                }
+                else if (c == '[' && !isElapsed)
+                {
+                    isElapsed = true;
+                    mIsMonth = false;
+                    sb.Append(c);
+                }
+                else if (c == ']' && isElapsed)
+                {
+                    isElapsed = false;
+                    sb.Append(c);
+                }
+                else if (isElapsed)
+                {
+                    if (c == 'h' || c == 'H')
+                    {
+                        sb.Append('H');
+                    }
+                    else if (c == 'm' || c == 'M')
+                    {
+                        sb.Append('m');
+                    }
+                    else if (c == 's' || c == 'S')
+                    {
+                        sb.Append('s');
+                    }
+                    else
+                    {
+                        sb.Append(c);
+                    }
+                }
+                else if (c == 'h' || c == 'H')
                 {
                     mIsMonth = false;
                     if (hasAmPm)
@@ -519,7 +584,7 @@ namespace NPOI.SS.UserModel
                     char c = sb[i];
                     if (c == '_' || c == '*' || c == '?')
                     {
-                        if (i > 0 && sb[(i - 1)] == '\\')
+                        if (i > 0 && sb[i - 1] == '\\')
                         {
                             // It's escaped, don't worry
                             continue;
@@ -543,6 +608,7 @@ namespace NPOI.SS.UserModel
                             }
                             // Remove the character too
                             sb.Remove(i, 1);
+                            i--;
                         }
                     }
                 }
@@ -558,7 +624,7 @@ namespace NPOI.SS.UserModel
                     char c = sb[i];
                     if (c == '_' || c == '*')
                     {
-                        if (i > 0 && sb[(i - 1)] == '\\')
+                        if (i > 0 && sb[i - 1] == '\\')
                         {
                             // It's escaped, don't worry
                             continue;
@@ -572,6 +638,7 @@ namespace NPOI.SS.UserModel
                         }
                         // Remove the _ too
                         sb.Remove(i, 1);
+                        i--;
                     }
                 }
             }
@@ -580,7 +647,7 @@ namespace NPOI.SS.UserModel
             //  quoting and scientific notation
             for (int i = 0; i < sb.Length; i++)
             {
-                char c = sb[(i)];
+                char c = sb[i];
                 // remove quotes and back slashes
                 if (c == '\\' || c == '"')
                 {
@@ -589,7 +656,7 @@ namespace NPOI.SS.UserModel
 
                     // for scientific/engineering notation
                 }
-                else if (c == '+' && i > 0 && sb[(i - 1)] == 'E')
+                else if (c == '+' && i > 0 && sb[i - 1] == 'E')
                 {
                     sb.Remove(i, 1);
                     i--;
@@ -600,42 +667,6 @@ namespace NPOI.SS.UserModel
         }
         private FormatBase CreateNumberFormat(String formatStr, double cellValue)
         {
-            //StringBuilder sb = new StringBuilder(formatStr);
-            //for (int i = 0; i < sb.Length; i++)
-            //{
-            //    char c = sb[i];
-            //    //handle (#,##0_);
-            //    if (c == '(')
-            //    {
-            //        int idx = sb.ToString().IndexOf(")", i);
-            //        if (idx > -1 && sb[idx - 1] == '_')
-            //        {
-            //            sb.Remove(idx, 1);
-            //            sb.Remove(idx - 1, 1);
-            //            sb.Remove(i, 1);
-            //            i--;
-            //        }
-            //    }
-            //    else if (c == ')' && i > 0 && sb[i - 1] == '_')
-            //    {
-            //        sb.Remove(i, 1);
-            //        sb.Remove(i - 1, 1);
-            //        i--;
-            //        // remove quotes and back slashes
-            //    }
-            //    else if (c == '\\' || c == '"')
-            //    {
-            //        sb.Remove(i, 1);
-            //        i--;
-
-            //        // for scientific/engineering notation
-            //    }
-            //    else if (c == '+' && i > 0 && sb[i - 1] == 'E')
-            //    {
-            //        sb.Remove(i, 1);
-            //        i--;
-            //    }
-            //}
             String format = cleanFormatForNumber(formatStr);
             try
             {
@@ -782,8 +813,20 @@ namespace NPOI.SS.UserModel
             {
                 return value.ToString(currentCulture);
             }
-            // RK: This hack handles scientific notation by adding the missing + back.
-            String result = numberFormat.Format(value, currentCulture);
+            // When formatting 'value', double to text to BigDecimal produces more
+            // accurate results than double to Double in JDK8 (as compared to
+            // previous versions). However, if the value contains E notation, this
+            // would expand the values, which we do not want, so revert to
+            // original method.
+            String result;
+            String textValue = NumberToTextConverter.ToText(value);
+            if (textValue.IndexOf('E') > -1) {
+                result = numberFormat.Format(value);
+            }
+            else {
+                result = numberFormat.Format(textValue);
+            }
+            // Complete scientific notation by adding the missing +.
             if (result.Contains("E") && !result.Contains("E-"))
             {
                 result = result.Replace("E", "E+");
@@ -836,15 +879,11 @@ namespace NPOI.SS.UserModel
             CellType cellType = cell.CellType;
             if (evaluator != null && cellType == CellType.Formula)
             {
-                try
+                if (evaluator == null)
                 {
-                    cellType = evaluator.EvaluateFormulaCell(cell);
+                    return cell.CellFormula;
                 }
-                catch (Exception e)
-                {
-                    throw new Exception("Did you forget to set the current" +
-                            " row on the HSSFFormulaEvaluator?", e);
-                }
+                cellType = evaluator.EvaluateFormulaCell(cell);
             }
             switch (cellType)
             {
@@ -867,6 +906,8 @@ namespace NPOI.SS.UserModel
                     return cell.BooleanCellValue.ToString().ToUpper();
                 case CellType.Blank:
                     return "";
+                case CellType.Error:
+                    return FormulaError.ForInt(cell.ErrorCellValue).String;
             }
             throw new Exception("Unexpected celltype (" + cellType + ")");
         }

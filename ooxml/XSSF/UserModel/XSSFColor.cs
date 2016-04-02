@@ -96,52 +96,32 @@ namespace NPOI.XSSF.UserModel
         }
 
 
-        /**
-        * For RGB colours, but not ARGB (we think...)
-        * Excel Gets black and white the wrong way around, so switch them 
-         */
-        private byte[] CorrectRGB(byte[] rgb)
-        {
-            if (rgb.Length == 4)
-            {
-                // Excel doesn't appear to get these wrong
-                // Nothing to change
-                return rgb;
-            }
-            else
-            {
-                // Excel Gets black and white the wrong way around, so switch them 
-                if (rgb[0] == 0 && rgb[1] == 0 && rgb[2] == 0)
-                {
-                    rgb = new byte[] { 255, 255, 255 };
-                }
-                else if (rgb[0] == 255 && rgb[1] == 255 && rgb[2] == 255)
-                {
-                    rgb = new byte[] { 0, 0, 0 };
-                }
-                return rgb;
-            }
+        public byte[] GetRgb()
+        { 
+            return this.RGB;
         }
-
         /**
          * Standard Red Green Blue ctColor value (RGB).
          * If there was an A (Alpha) value, it will be stripped.
          */
-        public byte[] GetRgb()
+        public byte[] RGB
         {
-            byte[] rgb = GetRGBOrARGB();
-            if (rgb == null) return null;
+            get
+            {
+                byte[] rgb = GetRGBOrARGB();
+                if (rgb == null) return null;
 
-            if (rgb.Length == 4)
-            {
-                // Need to trim off the alpha
-                byte[] tmp = new byte[3];
-                Array.Copy(rgb, 1, tmp, 0, 3);
-                return tmp;
-            }
-            else
-            {
-                return rgb;
+                if (rgb.Length == 4)
+                {
+                    // Need to trim off the alpha
+                    byte[] tmp = new byte[3];
+                    Array.Copy(rgb, 1, tmp, 0, 3);
+                    return tmp;
+                }
+                else
+                {
+                    return rgb;
+                }
             }
         }
 
@@ -194,7 +174,7 @@ namespace NPOI.XSSF.UserModel
             rgb = ctColor.GetRgb();
 
             // Correct it as needed, and return
-            return CorrectRGB(rgb);
+            return (rgb);
         }
 
         /**
@@ -271,26 +251,25 @@ namespace NPOI.XSSF.UserModel
         public void SetRgb(byte[] rgb)
         {
             // Correct it and save
-            ctColor.SetRgb(CorrectRGB(rgb));
+            ctColor.SetRgb((rgb));
         }
 
         /**
          * Index into the <clrScheme> collection, referencing a particular <sysClr> or
          *  <srgbClr> value expressed in the Theme part.
          */
-        public int GetTheme()
+        public int Theme
         {
-            return ctColor.themeSpecified ? (int)ctColor.theme : (int)0;
+            get
+            {
+                return ctColor.themeSpecified ? (int)ctColor.theme : (int)0;
+            }
+            set 
+            {
+                ctColor.theme = (uint)value;
+            }
         }
 
-        /**
-         * Index into the <clrScheme> collection, referencing a particular <sysClr> or
-         *  <srgbClr> value expressed in the Theme part.
-         */
-        public void SetTheme(int theme)
-        {
-            ctColor.theme = (uint)theme;
-        }
 
         /**
          * Specifies the tint value applied to the ctColor.

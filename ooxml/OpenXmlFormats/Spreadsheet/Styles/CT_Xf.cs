@@ -47,20 +47,21 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         public CT_Xf Copy()
         {
             CT_Xf obj = new CT_Xf();
-            obj.alignmentField = this.alignmentField;
-            obj.protectionField = this.protectionField;
+            if (this.alignment!=null)
+                obj.alignment = this.alignment.Copy();
+            obj.protection = this.protection;
             obj.extLstField = null == extLstField ? null : this.extLstField.Copy();
 
-            obj.applyAlignmentField = this.applyAlignmentField;
-            obj.applyBorderField = this.applyBorderField;
-            obj.applyFillField = this.applyFillField;
-            obj.applyFontField = this.applyFontField;
-            obj.applyNumberFormatField = this.applyNumberFormatField;
-            obj.applyProtectionField = this.applyProtectionField;
-            obj.borderIdField = this.borderIdField;
-            obj.fillIdField = this.fillIdField;
-            obj.fontIdField = this.fontIdField;
-            obj.numFmtIdField = this.numFmtIdField;
+            obj.applyAlignment = this.applyAlignment;
+            obj.applyBorder = this.applyBorder;
+            obj.applyFill = this.applyFill;
+            obj.applyFont = this.applyFont;
+            obj.applyNumberFormat = this.applyNumberFormat;
+            obj.applyProtection = this.applyProtection;
+            obj.borderId = this.borderId;
+            obj.fillId = this.fillId;
+            obj.fontId = this.fontId;
+            obj.numFmtId = this.numFmtId;
             obj.pivotButtonField = this.pivotButtonField;
             obj.quotePrefixField = this.quotePrefixField;
             obj.xfIdField = this.xfIdField;
@@ -106,23 +107,34 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "fontId", this.fontId, true);
             XmlHelper.WriteAttribute(sw, "fillId", this.fillId, true);
             XmlHelper.WriteAttribute(sw, "borderId", this.borderId, true);
-            XmlHelper.WriteAttribute(sw, "xfId", this.xfId,true);
+            XmlHelper.WriteAttribute(sw, "xfId", this.xfId, true);
             XmlHelper.WriteAttribute(sw, "quotePrefix", this.quotePrefix,false);
-			XmlHelper.WriteAttribute(sw, "pivotButton", this.pivotButton, false);
-			XmlHelper.WriteAttribute(sw, "applyNumberFormat", this.applyNumberFormat, false);
-			XmlHelper.WriteAttribute(sw, "applyFont", this.applyFont, false);
-			XmlHelper.WriteAttribute(sw, "applyFill", this.applyFill, false);
-			XmlHelper.WriteAttribute(sw, "applyBorder", this.applyBorder, false);
-			XmlHelper.WriteAttribute(sw, "applyAlignment", this.applyAlignment, false);
-			XmlHelper.WriteAttribute(sw, "applyProtection", this.applyProtection, false);
-            sw.Write(">");
-            if (this.alignment != null)
-                this.alignment.Write(sw, "alignment");
-            if (this.protection != null)
-                this.protection.Write(sw, "protection");
-            if (this.extLst != null)
-                this.extLst.Write(sw, "extLst");
-            sw.Write(string.Format("</{0}>", nodeName));
+            XmlHelper.WriteAttribute(sw, "pivotButton", this.pivotButton, false);
+            if(this.applyNumberFormat)
+                XmlHelper.WriteAttribute(sw, "applyNumberFormat", this.applyNumberFormat);
+            XmlHelper.WriteAttribute(sw, "applyFont", this.applyFont, false);
+            if (this.applyBorder)
+                XmlHelper.WriteAttribute(sw, "applyBorder", this.applyBorder, true);
+            if(this.applyFill)
+                XmlHelper.WriteAttribute(sw, "applyFill", this.applyFill);
+            XmlHelper.WriteAttribute(sw, "applyAlignment", this.applyAlignment, true);
+            if(this.applyProtection)
+                XmlHelper.WriteAttribute(sw, "applyProtection", this.applyProtection, true);
+            if (this.alignment == null && this.protection == null && this.extLst == null)
+            {
+                sw.Write("/>");
+            }
+            else
+            {
+                sw.Write(">");
+                if (this.alignment != null)
+                    this.alignment.Write(sw, "alignment");
+                if (this.protection != null)
+                    this.protection.Write(sw, "protection");
+                if (this.extLst != null)
+                    this.extLst.Write(sw, "extLst");
+                sw.Write(string.Format("</{0}>", nodeName));
+            }
         }
 
         //public override string ToString()
@@ -347,6 +359,11 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get { return this.applyProtectionField; }
             set { this.applyProtectionField = value; }
+        }
+
+        public bool IsSetApplyFill()
+        {
+            return this.applyFillField;
         }
     }
 }

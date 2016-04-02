@@ -52,8 +52,7 @@ namespace NPOI.XSSF.UserModel
          */
         public static CT_Connector Prototype()
         {
-            if (prototype == null)
-            {
+
                 CT_Connector shape = new CT_Connector();
                 CT_ConnectorNonVisual nv = shape.AddNewNvCxnSpPr();
                 NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_NonVisualDrawingProps nvp = nv.AddNewCNvPr();
@@ -62,7 +61,7 @@ namespace NPOI.XSSF.UserModel
                 nv.AddNewCNvCxnSpPr();
 
                 NPOI.OpenXmlFormats.Dml.Spreadsheet.CT_ShapeProperties sp = shape.AddNewSpPr();
-                NPOI.OpenXmlFormats.Dml.CT_Transform2D t2d = sp.AddNewXfrm();
+                CT_Transform2D t2d = sp.AddNewXfrm();
                 CT_PositiveSize2D p1 = t2d.AddNewExt();
                 p1.cx = (0);
                 p1.cy = (0);
@@ -92,7 +91,7 @@ namespace NPOI.XSSF.UserModel
                 fontRef.AddNewSchemeClr().val = (ST_SchemeColorVal.tx1);
 
                 prototype = shape;
-            }
+
             return prototype;
         }
 

@@ -53,7 +53,7 @@ namespace NPOI.SS.UserModel
     /// This interface is shared between the implementation specific to xls and xlsx.
     /// This way it is possible to access Excel workbooks stored in both formats.
     /// </summary>
-    public interface IWorkbook: IList<ISheet>
+    public interface IWorkbook
     {
 
         /// <summary>
@@ -160,20 +160,16 @@ namespace NPOI.SS.UserModel
         ISheet GetSheet(String name);
 
         /// <summary>
-        /// Support foreach ISheet, e.g.
-        /// HSSFWorkbook workbook = new HSSFWorkbook();
-        /// foreach(ISheet sheet in workbook) ...
-        /// </summary>
-        /// <returns>Enumeration of all the sheets of this workbook</returns>
-        IEnumerator GetEnumerator();
-
-        /// <summary>
         /// Removes sheet at the given index
         /// </summary>
         /// <param name="index"></param>
         void RemoveSheetAt(int index);
 
-
+        /// <summary>
+        /// Enumerate sheets
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator GetEnumerator();
         /**
          * To set just repeating columns:
          *  workbook.SetRepeatingRowsAndColumns(0,0,1,-1-1);
@@ -298,6 +294,22 @@ namespace NPOI.SS.UserModel
         void RemoveName(String name);
 
         /// <summary>
+        /// Adds the linking required to allow formulas referencing the specified 
+        /// external workbook to be added to this one. In order for formulas 
+        /// such as "[MyOtherWorkbook]Sheet3!$A$5" to be added to the file, 
+        /// some linking information must first be recorded. Once a given external 
+        /// workbook has been linked, then formulas using it can added. Each workbook 
+        /// needs linking only once. <br/>
+        /// This linking only applies for writing formulas. 
+        /// To link things for evaluation, see {@link FormulaEvaluator#setupReferencedWorkbooks(java.util.Map)}
+        /// </summary>
+        /// <param name="name">The name the workbook will be referenced as in formulas</param>
+        /// <param name="workbook">The open workbook to fetch the link required information from</param>
+        /// <returns></returns>
+        int LinkExternalWorkbook(String name, IWorkbook workbook);
+    
+
+        /// <summary>
         /// Sets the printarea for the sheet provided
         /// </summary>
         /// <param name="sheetIndex">Zero-based sheet index</param>
@@ -410,5 +422,6 @@ namespace NPOI.SS.UserModel
         /// <param name="toopack">the toolpack to register</param>
         void AddToolPack(UDFFinder toopack);
 
+        void Close();
     }
 }

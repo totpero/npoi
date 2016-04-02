@@ -92,15 +92,18 @@ namespace NPOI.XWPF.UserModel
          * </p>
          * @return the Picture data.
          */
-        public byte[] GetData()
+        public byte[] Data
         {
-            try
+            get
             {
-                return IOUtils.ToByteArray(GetPackagePart().GetInputStream());
-            }
-            catch (IOException e)
-            {
-                throw new POIXMLException(e);
+                try
+                {
+                    return IOUtils.ToByteArray(GetPackagePart().GetInputStream());
+                }
+                catch (IOException e)
+                {
+                    throw new POIXMLException(e);
+                }
             }
         }
 
@@ -109,19 +112,22 @@ namespace NPOI.XWPF.UserModel
          * isn't always available, but if it can be found it's likely to be in the
          * CTDrawing
          */
-        public String GetFileName()
+        public String FileName
         {
-            String name = GetPackagePart().PartName.Name;
-            if (name == null)
-                return null;
-            return name.Substring(name.LastIndexOf('/') + 1);
+            get
+            {
+                String name = GetPackagePart().PartName.Name;
+                if (name == null)
+                    return null;
+                return name.Substring(name.LastIndexOf('/') + 1);
+            }
         }
 
         /**
          * Suggests a file extension for this image.
          * @return the file extension.
          */
-        public String suggestFileExtension()
+        public String SuggestFileExtension()
         {
             return GetPackagePart().PartName.Extension;
         }
@@ -176,7 +182,8 @@ namespace NPOI.XWPF.UserModel
                     {
                         try
                         {
-                            is1.Close();
+                            if (is1 != null)
+                                is1.Close();
                         }
                         catch (IOException e)
                         {
@@ -256,13 +263,22 @@ namespace NPOI.XWPF.UserModel
             {
                 return false;
             }
-            return Arrays.Equals(this.GetData(), picData.GetData());
+            return Arrays.Equals(this.Data, picData.Data);
         }
 
 
         public override int GetHashCode()
         {
             return Checksum.GetHashCode();
+        }
+
+        /**
+         * *PictureData objects store the actual content in the part directly without keeping a 
+         * copy like all others therefore we need to handle them differently.
+         */
+        protected internal override void PrepareForCommit()
+        {
+            // do not clear the part here
         }
     }
 

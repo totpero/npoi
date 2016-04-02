@@ -56,6 +56,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             if (node.Attributes["ht"]!=null)
                 ctObj.ht = XmlHelper.ReadDouble(node.Attributes["ht"]);
             ctObj.hidden = XmlHelper.ReadBool(node.Attributes["hidden"]);
+            ctObj.outlineLevel = XmlHelper.ReadByte(node.Attributes["outlineLevel"]);
             ctObj.customHeight = XmlHelper.ReadBool(node.Attributes["customHeight"]);
             ctObj.collapsed = XmlHelper.ReadBool(node.Attributes["collapsed"]);
             ctObj.thickTop = XmlHelper.ReadBool(node.Attributes["thickTop"]);
@@ -216,7 +217,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get
             {
-                return null == this.rField ? 0 : (uint)this.rField;
+                return this.rField;
             }
             set
             {
@@ -243,7 +244,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get
             {
-                return (null == sField) ? 0 : (uint)this.sField;
+                return this.sField;
             }
             set
             {
@@ -257,7 +258,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get
             {
-                return (null == customFormatField) ? false : (bool)this.customFormatField;
+                return this.customFormatField;
             }
             set
             {
@@ -284,7 +285,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             get
             {
-                return (null == hiddenField) ? false : (bool)this.hiddenField;
+                return this.hiddenField;
             }
             set
             {

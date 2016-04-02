@@ -29,6 +29,8 @@ using System.Collections.Generic;
 using System.Collections;
 using System;
 using TestCases.SS.UserModel;
+using System.Text;
+using NPOI.SS.Util;
 namespace NPOI.XSSF.UserModel
 {
 
@@ -46,7 +48,7 @@ namespace NPOI.XSSF.UserModel
          * Tests that we can save, and then re-load a new document
          */
         [Test]
-        public void TestSaveLoadNew()
+        public void SaveLoadNew()
         {
             XSSFWorkbook workbook = new XSSFWorkbook();
 
@@ -112,9 +114,11 @@ namespace NPOI.XSSF.UserModel
             sheet1 = workbook.GetSheetAt(0);
             Assert.AreEqual(1.2, sheet1.GetRow(0).GetCell(0).NumericCellValue, 0.0001);
             Assert.AreEqual("hello world", sheet1.GetRow(1).GetCell(0).RichStringCellValue.String);
+
+            pkg.Close();
         }
         [Test]
-        public void TestExisting()
+        public void Existing()
         {
 
             XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("Formatting.xlsx");
@@ -129,10 +133,10 @@ namespace NPOI.XSSF.UserModel
             // Links to the three sheets, shared, styles and themes
             Assert.IsTrue(wbPart.HasRelationships);
             Assert.AreEqual(6, wbPart.Relationships.Size);
-
+            pkg.Close();
         }
         [Test]
-        public void TestGetCellStyleAt()
+        public void GetCellStyleAt()
         {
             XSSFWorkbook workbook = new XSSFWorkbook();
             short i = 0;
@@ -151,7 +155,7 @@ namespace NPOI.XSSF.UserModel
             Assert.IsNotNull(cellStyleAt);
         }
         [Test]
-        public void TestGetFontAt()
+        public void GetFontAt()
         {
             XSSFWorkbook workbook = new XSSFWorkbook();
             StylesTable styleSource = workbook.GetStylesSource();
@@ -168,7 +172,7 @@ namespace NPOI.XSSF.UserModel
             Assert.IsNotNull(fontAt);
         }
         [Test]
-        public void TestNumCellStyles()
+        public void NumCellStyles()
         {
             XSSFWorkbook workbook = new XSSFWorkbook();
             short i = workbook.NumCellStyles;
@@ -176,7 +180,7 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(1, i);
         }
         [Test]
-        public void TestLoadSave()
+        public void LoadSave()
         {
             XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("Formatting.xlsx");
             Assert.AreEqual(3, workbook.NumberOfSheets);
@@ -200,7 +204,7 @@ namespace NPOI.XSSF.UserModel
             Assert.IsNotNull(wb2.GetStylesSource());
         }
         [Test]
-        public void TestStyles()
+        public void Styles()
         {
             XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("Formatting.xlsx");
 
@@ -209,7 +213,7 @@ namespace NPOI.XSSF.UserModel
             StylesTable st = ss;
 
             // Has 8 number formats
-            Assert.AreEqual(8, st.GetNumberFormatSize());
+            Assert.AreEqual(8, st.NumberFormatSize);
             // Has 2 fonts
             Assert.AreEqual(2, st.GetFonts().Count);
             // Has 2 Fills
@@ -224,67 +228,88 @@ namespace NPOI.XSSF.UserModel
                     st.PutNumberFormat("testFORMAT"));
             Assert.AreEqual(StylesTable.FIRST_CUSTOM_STYLE_ID + 9,
                     st.PutNumberFormat("testFORMAT2"));
-            Assert.AreEqual(10, st.GetNumberFormatSize());
+            Assert.AreEqual(10, st.NumberFormatSize);
 
 
             // Save, load back in again, and check
-            workbook = (XSSFWorkbook) XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+            workbook = (XSSFWorkbook)XSSFTestDataSamples.WriteOutAndReadBack(workbook);
 
             ss = workbook.GetStylesSource();
             Assert.IsNotNull(ss);
 
-            Assert.AreEqual(10, st.GetNumberFormatSize());
+            Assert.AreEqual(10, st.NumberFormatSize);
             Assert.AreEqual(2, st.GetFonts().Count);
             Assert.AreEqual(2, st.GetFills().Count);
             Assert.AreEqual(1, st.GetBorders().Count);
         }
         [Test]
-        public void TestIncrementSheetId()
+        public void IncrementSheetId()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
-            int sheetId = (int)((XSSFSheet)wb.CreateSheet()).sheet.sheetId;
-            Assert.AreEqual(1, sheetId);
-            sheetId = (int)((XSSFSheet)wb.CreateSheet()).sheet.sheetId;
-            Assert.AreEqual(2, sheetId);
+            try
+            {
+                int sheetId = (int)(wb.CreateSheet() as XSSFSheet).sheet.sheetId;
+                Assert.AreEqual(1, sheetId);
+                sheetId = (int)(wb.CreateSheet() as XSSFSheet).sheet.sheetId;
+                Assert.AreEqual(2, sheetId);
 
-            //test file with gaps in the sheetId sequence
-            wb = XSSFTestDataSamples.OpenSampleWorkbook("47089.xlsm");
-            int lastSheetId = (int)((XSSFSheet)wb.GetSheetAt(wb.NumberOfSheets - 1)).sheet.sheetId;
-            sheetId = (int)((XSSFSheet)wb.CreateSheet()).sheet.sheetId;
-            Assert.AreEqual(lastSheetId + 1, sheetId);
+                //test file with gaps in the sheetId sequence
+                XSSFWorkbook wbBack = XSSFTestDataSamples.OpenSampleWorkbook("47089.xlsm");
+                try
+                {
+                    int lastSheetId = (int)(wbBack.GetSheetAt(wbBack.NumberOfSheets - 1)  as XSSFSheet).sheet.sheetId;
+                    sheetId = (int)(wbBack.CreateSheet() as XSSFSheet).sheet.sheetId;
+                    Assert.AreEqual(lastSheetId + 1, sheetId);
+                }
+                finally
+                {
+                    wbBack.Close();
+                }
+            }
+            finally
+            {
+                wb.Close();
+            }
         }
 
         /**
          *  Test Setting of core properties such as Title and Author
          */
         [Test]
-        public void TestWorkbookProperties()
+        public void WorkbookProperties()
         {
             XSSFWorkbook workbook = new XSSFWorkbook();
-            POIXMLProperties props = workbook.GetProperties();
-            Assert.IsNotNull(props);
-            //the Application property must be set for new workbooks, see Bugzilla #47559
-            Assert.AreEqual("NPOI", props.ExtendedProperties.GetUnderlyingProperties().Application);
+            try
+            {
+                POIXMLProperties props = workbook.GetProperties();
+                Assert.IsNotNull(props);
+                //the Application property must be set for new workbooks, see Bugzilla #47559
+                Assert.AreEqual("NPOI", props.ExtendedProperties.GetUnderlyingProperties().Application);
 
-            PackagePropertiesPart opcProps = props.CoreProperties.GetUnderlyingProperties();
-            Assert.IsNotNull(opcProps);
+                PackagePropertiesPart opcProps = props.CoreProperties.GetUnderlyingProperties();
+                Assert.IsNotNull(opcProps);
 
-            opcProps.SetTitleProperty("Testing Bugzilla #47460");
-            Assert.AreEqual("NPOI", opcProps.GetCreatorProperty());
-            opcProps.SetCreatorProperty("poi-dev@poi.apache.org");
+                opcProps.SetTitleProperty("Testing Bugzilla #47460");
+                Assert.AreEqual("NPOI", opcProps.GetCreatorProperty());
+                opcProps.SetCreatorProperty("poi-dev@poi.apache.org");
 
-            workbook = (XSSFWorkbook) XSSFTestDataSamples.WriteOutAndReadBack(workbook);
-            Assert.AreEqual("NPOI", workbook.GetProperties().ExtendedProperties.GetUnderlyingProperties().Application);
-            opcProps = workbook.GetProperties().CoreProperties.GetUnderlyingProperties();
-            Assert.AreEqual("Testing Bugzilla #47460", opcProps.GetTitleProperty());
-            Assert.AreEqual("poi-dev@poi.apache.org", opcProps.GetCreatorProperty());
+                XSSFWorkbook wbBack = (XSSFWorkbook)XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+                Assert.AreEqual("NPOI", wbBack.GetProperties().ExtendedProperties.GetUnderlyingProperties().Application);
+                opcProps = wbBack.GetProperties().CoreProperties.GetUnderlyingProperties();
+                Assert.AreEqual("Testing Bugzilla #47460", opcProps.GetTitleProperty());
+                Assert.AreEqual("poi-dev@poi.apache.org", opcProps.GetCreatorProperty());
+            }
+            finally
+            {
+                workbook.Close();
+            }
         }
 
         /**
          * Verify that the attached Test data was not modified. If this Test method
          * fails, the Test data is not working properly.
          */
-        //public void TestBug47668()
+        //public void Bug47668()
         //{
         //    XSSFWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("47668.xlsx");
         //    IList allPictures = workbook.GetAllPictures();
@@ -322,7 +347,7 @@ namespace NPOI.XSSF.UserModel
          * When deleting a sheet make sure that we adjust sheet indices of named ranges
          */
         [Test]
-        public void TestBug47737()
+        public void Bug47737()
         {
             XSSFWorkbook wb = XSSFTestDataSamples.OpenSampleWorkbook("47737.xlsx");
             Assert.AreEqual(2, wb.NumberOfNames);
@@ -350,7 +375,7 @@ namespace NPOI.XSSF.UserModel
          * Problems with XSSFWorkbook.RemoveSheetAt when workbook Contains chart
          */
         [Test]
-        public void TestBug47813()
+        public void Bug47813()
         {
             XSSFWorkbook wb = XSSFTestDataSamples.OpenSampleWorkbook("47813.xlsx");
             Assert.AreEqual(3, wb.NumberOfSheets);
@@ -379,7 +404,7 @@ namespace NPOI.XSSF.UserModel
          *  coming out wrong
          */
         [Test]
-        public void TestBug49702()
+        public void Bug49702()
         {
             // First try with a new file
             XSSFWorkbook wb = new XSSFWorkbook();
@@ -435,7 +460,7 @@ namespace NPOI.XSSF.UserModel
             catch (ArgumentOutOfRangeException) { }
         }
         [Test]
-        public void TestRecalcId()
+        public void RecalcId()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
             Assert.IsFalse(wb.GetForceFormulaRecalculation());
@@ -461,12 +486,12 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(ST_CalcMode.auto, calcPr.calcMode);
         }
         [Test]
-        public void TestChangeSheetNameWithSharedFormulas()
+        public void ChangeSheetNameWithSharedFormulas()
         {
             ChangeSheetNameWithSharedFormulas("shared_formulas.xlsx");
         }
         [Test]
-        public void TestSetTabColor()
+        public void SetTabColor()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
             XSSFSheet sh = wb.CreateSheet() as XSSFSheet;
@@ -476,5 +501,339 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(IndexedColors.Red.Index,
                     sh.GetCTWorksheet().sheetPr.tabColor.indexed);
         }
+        [Test]
+        public void ColumnWidthPOI52233()
+        {
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            ISheet sheet = workbook.CreateSheet();
+            IRow row = sheet.CreateRow(0);
+            ICell cell = row.CreateCell(0);
+            cell.SetCellValue("hello world");
+
+            sheet = workbook.CreateSheet();
+            sheet.SetColumnWidth(4, 5000);
+            sheet.SetColumnWidth(5, 5000);
+
+            sheet.GroupColumn((short)4, (short)5);
+
+            accessWorkbook(workbook);
+
+            MemoryStream stream = new MemoryStream();
+            try
+            {
+                workbook.Write(stream);
+            }
+            finally
+            {
+                stream.Close();
+            }
+            accessWorkbook(workbook);
+
+        }
+
+        private void accessWorkbook(XSSFWorkbook workbook)
+        {
+            workbook.GetSheetAt(1).SetColumnGroupCollapsed(4, true);
+            workbook.GetSheetAt(1).SetColumnGroupCollapsed(4, false);
+
+            Assert.AreEqual("hello world", workbook.GetSheetAt(0).GetRow(0).GetCell(0).StringCellValue);
+            Assert.AreEqual(2048, workbook.GetSheetAt(0).GetColumnWidth(0)); // <-works
+        }
+
+        [Test]
+        public void Bug48495()
+        {
+            try
+            {
+                IWorkbook wb = XSSFTestDataSamples.OpenSampleWorkbook("48495.xlsx");
+
+                assertSheetOrder(wb, "Sheet1");
+
+                ISheet sheet = wb.GetSheetAt(0);
+                sheet.ShiftRows(2, sheet.LastRowNum, 1, true, false);
+                IRow newRow = sheet.GetRow(2);
+                if (newRow == null) newRow = sheet.CreateRow(2);
+                newRow.CreateCell(0).SetCellValue(" Another Header");
+                wb.CloneSheet(0);
+
+                assertSheetOrder(wb, "Sheet1", "Sheet1 (2)");
+
+
+                IWorkbook read = XSSFTestDataSamples.WriteOutAndReadBack(wb);
+                Assert.IsNotNull(read);
+                assertSheetOrder(read, "Sheet1", "Sheet1 (2)");
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
+        [Test]
+        public void Bug47090a()
+        {
+            IWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("47090.xlsx");
+            assertSheetOrder(workbook, "Sheet1", "Sheet2");
+            workbook.RemoveSheetAt(0);
+            assertSheetOrder(workbook, "Sheet2");
+            workbook.CreateSheet();
+            assertSheetOrder(workbook, "Sheet2", "Sheet1");
+            IWorkbook read = XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+            assertSheetOrder(read, "Sheet2", "Sheet1");
+        }
+
+        [Test]
+        public void Bug47090b()
+        {
+            IWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("47090.xlsx");
+            assertSheetOrder(workbook, "Sheet1", "Sheet2");
+            workbook.RemoveSheetAt(1);
+            assertSheetOrder(workbook, "Sheet1");
+            workbook.CreateSheet();
+            assertSheetOrder(workbook, "Sheet1", "Sheet0");		// Sheet0 because it uses "Sheet" + sheets.size() as starting point!
+            IWorkbook read = XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+            assertSheetOrder(read, "Sheet1", "Sheet0");
+        }
+
+        [Test]
+        public void Bug47090c()
+        {
+            IWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("47090.xlsx");
+            assertSheetOrder(workbook, "Sheet1", "Sheet2");
+            workbook.RemoveSheetAt(0);
+            assertSheetOrder(workbook, "Sheet2");
+            workbook.CloneSheet(0);
+            assertSheetOrder(workbook, "Sheet2", "Sheet2 (2)");
+            IWorkbook read = XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+            assertSheetOrder(read, "Sheet2", "Sheet2 (2)");
+        }
+
+        [Test]
+        public void Bug47090d()
+        {
+            IWorkbook workbook = XSSFTestDataSamples.OpenSampleWorkbook("47090.xlsx");
+            assertSheetOrder(workbook, "Sheet1", "Sheet2");
+            workbook.CreateSheet();
+            assertSheetOrder(workbook, "Sheet1", "Sheet2", "Sheet0");
+            workbook.RemoveSheetAt(0);
+            assertSheetOrder(workbook, "Sheet2", "Sheet0");
+            workbook.CreateSheet();
+            assertSheetOrder(workbook, "Sheet2", "Sheet0", "Sheet1");
+            IWorkbook read = XSSFTestDataSamples.WriteOutAndReadBack(workbook);
+            assertSheetOrder(read, "Sheet2", "Sheet0", "Sheet1");
+        }
+
+        [Test]
+        public void Bug51158()
+        {
+            // create a workbook
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.CreateSheet("Test Sheet") as XSSFSheet;
+            XSSFRow row = sheet.CreateRow(2) as XSSFRow;
+            XSSFCell cell = row.CreateCell(3) as XSSFCell;
+            cell.SetCellValue("test1");
+
+            //XSSFCreationHelper helper = workbook.GetCreationHelper();
+            //cell.Hyperlink=(/*setter*/helper.CreateHyperlink(0));
+
+            XSSFComment comment = (sheet.CreateDrawingPatriarch() as XSSFDrawing).CreateCellComment(new XSSFClientAnchor()) as XSSFComment;
+            Assert.IsNotNull(comment);
+            comment.SetString("some comment");
+
+            //        ICellStyle cs = workbook.CreateCellStyle();
+            //        cs.ShrinkToFit=(/*setter*/false);
+            //        row.CreateCell(0).CellStyle=(/*setter*/cs);
+
+            // write the first excel file
+            XSSFWorkbook readBack = XSSFTestDataSamples.WriteOutAndReadBack(workbook) as XSSFWorkbook;
+            Assert.IsNotNull(readBack);
+            Assert.AreEqual("test1", readBack.GetSheetAt(0).GetRow(2).GetCell(3).StringCellValue);
+            Assert.IsNull(readBack.GetSheetAt(0).GetRow(2).GetCell(4));
+
+            // add a new cell to the sheet
+            cell = row.CreateCell(4) as XSSFCell;
+            cell.SetCellValue("test2");
+
+            // write the second excel file
+            readBack = XSSFTestDataSamples.WriteOutAndReadBack(workbook) as XSSFWorkbook;
+            Assert.IsNotNull(readBack);
+            Assert.AreEqual("test1", readBack.GetSheetAt(0).GetRow(2).GetCell(3).StringCellValue);
+            Assert.AreEqual("test2", readBack.GetSheetAt(0).GetRow(2).GetCell(4).StringCellValue);
+        }
+
+        [Test]
+        public void Bug51158a()
+        {
+            // create a workbook
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            workbook.CreateSheet("Test Sheet");
+
+            XSSFSheet sheetBack = workbook.GetSheetAt(0) as XSSFSheet;
+
+            // Committing twice did add the XML twice without Clearing the part in between
+            sheetBack.Commit();
+
+            // ensure that a memory based package part does not have lingering data from previous Commit() calls
+            if (sheetBack.GetPackagePart() is MemoryPackagePart)
+            {
+                ((MemoryPackagePart)sheetBack.GetPackagePart()).Clear();
+            }
+
+            sheetBack.Commit();
+
+            String str = Encoding.UTF8.GetString(IOUtils.ToByteArray(sheetBack.GetPackagePart().GetInputStream()));
+            //System.out.Println(str);
+
+            Assert.AreEqual(1, countMatches(str, "<worksheet"));
+        }
+
+        private static int INDEX_NOT_FOUND = -1;
+
+        private static int countMatches(string str, string sub)
+        {
+            if (string.IsNullOrEmpty(str) || string.IsNullOrEmpty(sub))
+            {
+                return 0;
+            }
+            int count = 0;
+            int idx = 0;
+            while ((idx = IndexOf(str, sub, idx)) != INDEX_NOT_FOUND)
+            {
+                count++;
+                idx += sub.Length;
+            }
+            return count;
+        }
+
+        private static int IndexOf(string cs, string searchChar, int start)
+        {
+            return cs.ToString().IndexOf(searchChar.ToString(), start);
+        }
+
+        [Test]
+        public void AddPivotCache()
+        {
+            XSSFWorkbook wb = new XSSFWorkbook();
+            try
+            {
+                CT_Workbook ctWb = wb.GetCTWorkbook();
+                CT_PivotCache pivotCache = wb.AddPivotCache("0");
+                //Ensures that pivotCaches is Initiated
+                Assert.IsTrue(ctWb.IsSetPivotCaches());
+                Assert.AreSame(pivotCache, ctWb.pivotCaches.GetPivotCacheArray(0));
+                Assert.AreEqual("0", pivotCache.id);
+            }
+            finally
+            {
+                wb.Close();
+            }
+        }
+
+        public void SetPivotData(XSSFWorkbook wb)
+        {
+            XSSFSheet sheet = wb.CreateSheet() as XSSFSheet;
+
+            IRow row1 = sheet.CreateRow(0);
+            // Create a cell and Put a value in it.
+            ICell cell = row1.CreateCell(0);
+            cell.SetCellValue("Names");
+            ICell cell2 = row1.CreateCell(1);
+            cell2.SetCellValue("#");
+            ICell cell7 = row1.CreateCell(2);
+            cell7.SetCellValue("Data");
+
+            IRow row2 = sheet.CreateRow(1);
+            ICell cell3 = row2.CreateCell(0);
+            cell3.SetCellValue("Jan");
+            ICell cell4 = row2.CreateCell(1);
+            cell4.SetCellValue(10);
+            ICell cell8 = row2.CreateCell(2);
+            cell8.SetCellValue("Apa");
+
+            IRow row3 = sheet.CreateRow(2);
+            ICell cell5 = row3.CreateCell(0);
+            cell5.SetCellValue("Ben");
+            ICell cell6 = row3.CreateCell(1);
+            cell6.SetCellValue(9);
+            ICell cell9 = row3.CreateCell(2);
+            cell9.SetCellValue("Bepa");
+
+            AreaReference source = new AreaReference("A1:B2");
+            sheet.CreatePivotTable(source, new CellReference("H5"));
+        }
+
+        [Test]
+        public void LoadWorkbookWithPivotTable()
+        {
+            String fileName = "ooxml-pivottable.xlsx";
+
+            XSSFWorkbook wb = new XSSFWorkbook();
+            SetPivotData(wb);
+
+            FileStream fileOut = new FileStream(fileName, FileMode.Create, FileAccess.ReadWrite);
+            wb.Write(fileOut);
+            fileOut.Close();
+
+            XSSFWorkbook wb2 = (XSSFWorkbook)WorkbookFactory.Create(fileName);
+            Assert.IsTrue(wb2.PivotTables.Count == 1);
+        }
+
+        [Test]
+        public void AddPivotTableToWorkbookWithLoadedPivotTable()
+        {
+            String fileName = "ooxml-pivottable.xlsx";
+
+            XSSFWorkbook wb = new XSSFWorkbook();
+            SetPivotData(wb);
+
+            FileStream fileOut = new FileStream(fileName, FileMode.Create, FileAccess.ReadWrite);
+            wb.Write(fileOut);
+            fileOut.Close();
+
+            XSSFWorkbook wb2 = (XSSFWorkbook)WorkbookFactory.Create(fileName);
+            SetPivotData(wb2);
+            Assert.IsTrue(wb2.PivotTables.Count == 2);
+        }
+
+        [Test]
+        public void SetFirstVisibleTab_57373()
+        {
+            XSSFWorkbook wb = new XSSFWorkbook();
+
+            try
+            {
+                /*Sheet sheet1 =*/
+                wb.CreateSheet();
+                ISheet sheet2 = wb.CreateSheet();
+                int idx2 = wb.GetSheetIndex(sheet2);
+                ISheet sheet3 = wb.CreateSheet();
+                int idx3 = wb.GetSheetIndex(sheet3);
+
+                // add many sheets so "first visible" is relevant
+                for (int i = 0; i < 30; i++)
+                {
+                    wb.CreateSheet();
+                }
+
+                wb.FirstVisibleTab = (/*setter*/idx2);
+                wb.SetActiveSheet(idx3);
+
+                //wb.Write(new FileOutputStream(new File("C:\\temp\\test.xlsx")));
+
+                Assert.AreEqual(idx2, wb.FirstVisibleTab);
+                Assert.AreEqual(idx3, wb.ActiveSheetIndex);
+
+                IWorkbook wbBack = XSSFTestDataSamples.WriteOutAndReadBack(wb);
+
+                sheet2 = wbBack.GetSheetAt(idx2);
+                sheet3 = wbBack.GetSheetAt(idx3);
+                Assert.AreEqual(idx2, wb.FirstVisibleTab);
+                Assert.AreEqual(idx3, wb.ActiveSheetIndex);
+            }
+            finally
+            {
+                wb.Close();
+            }
+        }
+
     }
 }

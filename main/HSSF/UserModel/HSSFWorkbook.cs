@@ -21,7 +21,10 @@ namespace NPOI.HSSF.UserModel
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
+    using System.Reflection;
+    using System.Security.Cryptography;
     using System.Text;
     using NPOI.DDF;
     using NPOI.HSSF.Model;
@@ -32,9 +35,6 @@ namespace NPOI.HSSF.UserModel
     using NPOI.SS.UserModel;
     using NPOI.SS.Util;
     using NPOI.Util;
-    using System.Globalization;
-    using System.Security.Cryptography;
-    using System.Reflection;
 
 
     /// <summary>
@@ -181,7 +181,17 @@ namespace NPOI.HSSF.UserModel
             _sheets = new List<HSSFSheet>(INITIAL_CAPACITY);
             names = new List<HSSFName>(INITIAL_CAPACITY);
         }
-
+        /**
+         * Companion to HSSFWorkbook(POIFSFileSystem), this constructs the 
+         *  POI filesystem around your inputstream, including all nodes.
+         * This calls {@link #HSSFWorkbook(InputStream, boolean)} with
+         *  preserve nodes set to true. 
+         *
+         * @see #HSSFWorkbook(InputStream, boolean)
+         * @see #HSSFWorkbook(POIFSFileSystem)
+         * @see org.apache.poi.poifs.filesystem.POIFSFileSystem
+         * @exception IOException if the stream cannot be read
+         */
         public HSSFWorkbook(POIFSFileSystem fs)
             : this(fs, true)
         {
@@ -209,7 +219,8 @@ namespace NPOI.HSSF.UserModel
          */
         private static readonly string[] WORKBOOK_DIR_ENTRY_NAMES = {
             "Workbook", // as per BIFF8 spec
-            "WORKBOOK",
+            "WORKBOOK", // Typically from third party programs
+            "BOOK",     // Typically odd Crystal Reports exports
         };
 
 
@@ -230,7 +241,17 @@ namespace NPOI.HSSF.UserModel
                     // continue - to try other options
                 }
             }
-
+            // check for an encrypted .xlsx file - they get OLE2 wrapped
+            try
+            {
+                directory.GetEntry("EncryptedPackage");
+                throw new EncryptedDocumentException("The supplied spreadsheet seems to be an Encrypted .xlsx file. " +
+                        "It must be decrypted before use by XSSF, it cannot be used by HSSF");
+            }
+            catch (FileNotFoundException)
+            {
+                // fall through
+            }
             // Check for previous version of file format
             try
             {
@@ -308,8 +329,16 @@ namespace NPOI.HSSF.UserModel
             RecordStream rs = new RecordStream(records, recOffset);
             while (rs.HasNext())
             {
-                InternalSheet sheet = InternalSheet.CreateSheet(rs);
-                _sheets.Add(new HSSFSheet(this, sheet));
+                try
+                {
+                    InternalSheet sheet = InternalSheet.CreateSheet(rs);
+                    _sheets.Add(new HSSFSheet(this, sheet));
+                }
+                catch (UnsupportedBOFType eb)
+                {
+                    // Hopefully there's a supported one after this!
+                    Console.WriteLine("Unsupported BOF found of type " + eb.Type);
+                }
             }
 
             for (int i = 0; i < workbook.NumNames; ++i)
@@ -429,6 +458,29 @@ namespace NPOI.HSSF.UserModel
             }
 
             workbook.UpdateNamesAfterCellShift(shifter);
+
+            // adjust active sheet if necessary
+            int active = ActiveSheetIndex;
+            if (active == oldSheetIndex)
+            {
+                // moved sheet was the active one
+                SetActiveSheet(pos);
+            }
+            else if ((active < oldSheetIndex && active < pos) ||
+                  (active > oldSheetIndex && active > pos))
+            {
+                // not affected
+            }
+            else if (pos > oldSheetIndex)
+            {
+                // moved sheet was below before and is above now => active is one less
+                SetActiveSheet(active - 1);
+            }
+            else
+            {
+                // remaining case: moved sheet was higher than active before and is lower now => active is one more
+                SetActiveSheet(active + 1);
+            }
         }
 
         /// <summary>
@@ -440,8 +492,13 @@ namespace NPOI.HSSF.UserModel
             int lastSheetIx = _sheets.Count - 1;
             if (index < 0 || index > lastSheetIx)
             {
+                String range = "(0.." + lastSheetIx + ")";
+                if (lastSheetIx == -1)
+                {
+                    range = "(no sheets)";
+                }
                 throw new ArgumentException("Sheet index ("
-                        + index + ") is out of range (0.." + lastSheetIx + ")");
+                        + index + ") is out of range " + range);
             }
         }
         /** Test only. Do not use */
@@ -886,7 +943,6 @@ namespace NPOI.HSSF.UserModel
         public void RemoveSheetAt(int index)
         {
             ValidateSheetIndex(index);
-            bool wasActive = GetSheetAt(index).IsActive;
             bool wasSelected = GetSheetAt(index).IsSelected;
 
             _sheets.RemoveAt(index);
@@ -905,10 +961,6 @@ namespace NPOI.HSSF.UserModel
             {
                 newSheetIndex = nSheets - 1;
             }
-            if (wasActive)
-            {
-                SetActiveSheet(newSheetIndex);
-            }
 
             if (wasSelected)
             {
@@ -925,6 +977,19 @@ namespace NPOI.HSSF.UserModel
                 {
                     SetSelectedTab(newSheetIndex);
                 }
+            }
+
+            // adjust active sheet
+            int active = ActiveSheetIndex;
+            if (active == index)
+            {
+                // removed sheet was the active one, reset active sheet if there is still one left now
+                SetActiveSheet(newSheetIndex);
+            }
+            else if (active > index)
+            {
+                // removed sheet was below the active one => active is one less now
+                SetActiveSheet(active - 1);
             }
         }
 
@@ -1079,7 +1144,7 @@ namespace NPOI.HSSF.UserModel
         /// <param name="italic">if set to <c>true</c> [italic].</param>
         /// <param name="strikeout">if set to <c>true</c> [strikeout].</param>
         /// <param name="typeOffset">The type offset.</param>
-        /// <param name="Underline">The underline.</param>
+        /// <param name="underline">The underline.</param>
         /// <returns></returns>
         public NPOI.SS.UserModel.IFont FindFont(short boldWeight, short color, short fontHeight,
                          String name, bool italic, bool strikeout,
@@ -1215,6 +1280,23 @@ namespace NPOI.HSSF.UserModel
             return style;
         }
 
+        /**
+         * Closes the underlying {@link NPOIFSFileSystem} from which
+         *  the Workbook was read, if any. Has no effect on Workbooks
+         *  opened from an InputStream, or newly created ones.
+         */
+        public void Close()
+        {
+            if (directory != null)
+            {
+                if (directory.NFileSystem != null)
+                {
+                    directory.NFileSystem.Close();
+                    directory = null;
+                }
+            }
+        }
+
         /// <summary>
         /// Write out this workbook to an Outputstream.  Constructs
         /// a new POI POIFSFileSystem, passes in the workbook binary representation  and
@@ -1259,13 +1341,15 @@ namespace NPOI.HSSF.UserModel
                 if (preserveNodes)
                 {
                     // Don't Write out the old Workbook, we'll be doing our new one
-                    excepts.Add("Workbook");
-                    // If the file had WORKBOOK instead of Workbook, we'll Write it
-                    //  out correctly shortly, so don't include the old one
-                    excepts.Add("WORKBOOK");
+                    // If the file had an "incorrect" name for the workbook stream,
+                    // don't write the old one as we'll use the correct name shortly
+                    excepts.AddRange(WORKBOOK_DIR_ENTRY_NAMES);
 
                     // Copy over all the other nodes to our new poifs
-                    POIUtils.CopyNodes(directory, fs.Root, excepts);
+                    EntryUtils.CopyNodes(
+                            new FilteringDirectoryNode(this.directory, excepts)
+                            , new FilteringDirectoryNode(fs.Root, excepts)
+                    );
                     // YK: preserve StorageClsid, it is important for embedded workbooks,
                     // see Bugzilla 47920
                     fs.Root.StorageClsid = (this.directory.StorageClsid);
@@ -1359,7 +1443,7 @@ namespace NPOI.HSSF.UserModel
  * By default includes functions from the Excel Analysis Toolpack
  */
         [NonSerialized]
-        private UDFFinder _udfFinder = UDFFinder.DEFAULT;
+        private UDFFinder _udfFinder = new IndexedUDFFinder(UDFFinder.DEFAULT);
 
         /**
  * Register a new toolpack in this workbook.
@@ -1411,11 +1495,21 @@ namespace NPOI.HSSF.UserModel
         /// <summary>
         /// Gets the Named range
         /// </summary>
-        /// <param name="index">position of the named range</param>
+        /// <param name="nameIndex">position of the named range</param>
         /// <returns>named range high level</returns>
-        public NPOI.SS.UserModel.IName GetNameAt(int index)
+        public NPOI.SS.UserModel.IName GetNameAt(int nameIndex)
         {
-            HSSFName result = names[index];
+            int nNames = names.Count;
+            if (nNames < 1)
+            {
+                throw new InvalidOperationException("There are no defined names in this workbook");
+            }
+            if (nameIndex < 0 || nameIndex > nNames)
+            {
+                throw new ArgumentOutOfRangeException("Specified name index " + nameIndex
+                        + " is outside the allowable range (0.." + (nNames - 1) + ").");
+            }
+            HSSFName result = names[nameIndex];
 
             return result;
         }
@@ -1703,11 +1797,52 @@ namespace NPOI.HSSF.UserModel
             InitDrawings();
 
             byte[] uid;
-            using (MD5 md5 = MD5.Create())
+            using (MD5 hasher = MD5.Create())
             {
-                uid = md5.ComputeHash(pictureData);
+                uid = hasher.ComputeHash(pictureData);
             }
-            EscherBitmapBlip blipRecord = new EscherBitmapBlip();
+            EscherBlipRecord blipRecord;
+            int blipSize;
+            short escherTag;
+            switch (format) {
+                case PictureType.WMF:
+                    // remove first 22 bytes if file starts with magic bytes D7-CD-C6-9A
+                    // see also http://de.wikipedia.org/wiki/Windows_Metafile#Hinweise_zur_WMF-Spezifikation
+                    if (LittleEndian.GetInt(pictureData) == unchecked((int)0x9AC6CDD7)) {
+                        byte[] picDataNoHeader = new byte[pictureData.Length-22];
+                        Array.Copy(pictureData, 22, picDataNoHeader, 0, pictureData.Length-22);
+                        pictureData = picDataNoHeader;
+                    }
+                    EscherMetafileBlip blipRecordMeta = new EscherMetafileBlip();
+                    blipRecord = blipRecordMeta;
+                    blipRecordMeta.UID=(/*setter*/uid);
+                    blipRecordMeta.SetPictureData(pictureData);
+                    // taken from libre office export, it won't open, if this is left to 0
+                    blipRecordMeta.Filter=(/*setter*/unchecked((byte)-2));
+                    blipSize = blipRecordMeta.CompressedSize + 58;
+                    escherTag = 0;
+                    break;
+                case PictureType.EMF:
+                    blipRecordMeta = new EscherMetafileBlip();
+                    blipRecord = blipRecordMeta;
+                    blipRecordMeta.UID=(/*setter*/uid);
+                    blipRecordMeta.SetPictureData(pictureData);
+                    // taken from libre office export, it won't open, if this is left to 0
+                    blipRecordMeta.Filter=(/*setter*/unchecked((byte)-2));
+                    blipSize = blipRecordMeta.CompressedSize + 58;
+                    escherTag = 0;
+                    break;
+                default:
+                    EscherBitmapBlip blipRecordBitmap = new EscherBitmapBlip();
+                    blipRecord = blipRecordBitmap;
+                    blipRecordBitmap.UID=(/*setter*/ uid );
+                    blipRecordBitmap.Marker=(/*setter*/ (byte) 0xFF );
+                    blipRecordBitmap.PictureData=(pictureData);
+                    blipSize = pictureData.Length + 25;
+                    escherTag = (short) 0xFF;
+    	            break;
+            }
+
             blipRecord.RecordId = (short)(EscherBitmapBlip.RECORD_ID_START + format);
             
             switch (format)
@@ -1732,18 +1867,14 @@ namespace NPOI.HSSF.UserModel
                     break;
             }
 
-            blipRecord.UID = uid;
-            blipRecord.Marker = (byte)0xFF;
-            blipRecord.PictureData = pictureData;
-
             EscherBSERecord r = new EscherBSERecord();
             r.RecordId = EscherBSERecord.RECORD_ID;
             r.Options = (short)(0x0002 | ((int)format << 4));
             r.BlipTypeMacOS = (byte)format;
             r.BlipTypeWin32 = (byte)format;
             r.UID = uid;
-            r.Tag = (short)0xFF;
-            r.Size = pictureData.Length + 25;
+            r.Tag = escherTag;
+            r.Size = blipSize;
             r.Ref = 0;
             r.Offset = 0;
             r.BlipRecord = blipRecord;
@@ -1812,6 +1943,85 @@ namespace NPOI.HSSF.UserModel
                 }
             }
         }
+        protected static Dictionary<String, ClassID> GetOleMap()
+        {
+            Dictionary<String, ClassID> olemap = new Dictionary<String, ClassID>();
+            olemap.Add("PowerPoint Document", ClassID.PPT_SHOW);
+            foreach (String str in WORKBOOK_DIR_ENTRY_NAMES)
+            {
+                olemap.Add(str, ClassID.XLS_WORKBOOK);
+            }
+            // ... to be continued
+            return olemap;
+        }
+
+        public int AddOlePackage(POIFSFileSystem poiData, String label, String fileName, String command)
+        {
+            DirectoryNode root = poiData.Root;
+            Dictionary<String, ClassID> olemap = GetOleMap();
+            foreach (KeyValuePair<String, ClassID> entry in olemap)
+            {
+                if (root.HasEntry(entry.Key))
+                {
+                    root.StorageClsid = (/*setter*/entry.Value);
+                    break;
+                }
+            }
+
+            MemoryStream bos = new MemoryStream();
+            poiData.WriteFileSystem(bos);
+            return AddOlePackage(bos.ToArray(), label, fileName, command);
+        }
+
+        public int AddOlePackage(byte[] oleData, String label, String fileName, String command)
+        {
+            // check if we were Created by POIFS otherwise create a new dummy POIFS for storing the package data
+            if (directory == null)
+            {
+                directory = new POIFSFileSystem().Root;
+                preserveNodes = true;
+            }
+
+            // Get free MBD-Node
+            int storageId = 0;
+            DirectoryEntry oleDir = null;
+            do
+            {
+                String storageStr = "MBD" + HexDump.ToHex(++storageId);
+                if (!directory.HasEntry(storageStr))
+                {
+                    oleDir = directory.CreateDirectory(storageStr);
+                    oleDir.StorageClsid = (/*setter*/ClassID.OLE10_PACKAGE);
+                }
+            } while (oleDir == null);
+
+            // the following data was taken from an example libre office document
+            // beside this "\u0001Ole" record there were several other records, e.g. CompObj,
+            // OlePresXXX, but it seems, that they aren't neccessary
+            byte[] oleBytes = { 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            oleDir.CreateDocument("\u0001Ole", new MemoryStream(oleBytes));
+
+            Ole10Native oleNative = new Ole10Native(label, fileName, command, oleData);
+            MemoryStream bos = new MemoryStream();
+            oleNative.WriteOut(bos);
+            oleDir.CreateDocument(Ole10Native.OLE10_NATIVE, new MemoryStream(bos.ToArray()));
+
+            return storageId;
+        }
+
+        /// <summary>
+        /// Adds the LinkTable records required to allow formulas referencing
+        /// the specified external workbook to be added to this one. Allows
+        /// formulas such as "[MyOtherWorkbook]Sheet3!$A$5" to be added to the 
+        /// file, for workbooks not already referenced.
+        /// </summary>
+        /// <param name="name">The name the workbook will be referenced as in formulas</param>
+        /// <param name="workbook">The open workbook to fetch the link required information from</param>
+        /// <returns></returns>
+        public int LinkExternalWorkbook(String name, IWorkbook workbook)
+        {
+            return this.workbook.LinkExternalWorkbook(name, workbook);
+        }
 
         /// <summary>
         /// Is the workbook protected with a password (not encrypted)?
@@ -1860,7 +2070,7 @@ namespace NPOI.HSSF.UserModel
         /// <summary>
         /// Gets all embedded OLE2 objects from the Workbook.
         /// </summary>
-        /// <param name="records">the list of records to search.</param>
+        /// <param name="sheet">the list of records to search.</param>
         /// <param name="objects">the list of embedded objects to populate.</param>
         private void GetAllEmbeddedObjects(HSSFSheet sheet, List<HSSFObjectData> objects)
         {
@@ -1869,11 +2079,21 @@ namespace NPOI.HSSF.UserModel
             {
                 return;
             }
-            foreach (HSSFShape shape in patriarch.Children)
-            {
-                if (shape is HSSFObjectData)
-                {
-                    objects.Add((HSSFObjectData)shape);
+            GetAllEmbeddedObjects(patriarch, objects);
+        }
+
+        /// <summary>
+        /// Recursively iterates a shape container to get all embedded objects.
+        /// </summary>
+        /// <param name="parent">the parent.</param>
+        /// <param name="objects">the list of embedded objects to populate.</param>
+        private void GetAllEmbeddedObjects(HSSFShapeContainer parent, List<HSSFObjectData> objects)
+        {
+            foreach (HSSFShape shape in parent.Children) {
+                if (shape is HSSFObjectData) {
+                    objects.Add((HSSFObjectData) shape);
+                } else if (shape is HSSFShapeContainer) {
+                    GetAllEmbeddedObjects((HSSFShapeContainer) shape, objects);
                 }
             }
         }
@@ -1936,14 +2156,14 @@ namespace NPOI.HSSF.UserModel
         }
 
         /**
-	     * Changes an external referenced file to another file.
-	     * A formular in Excel which refers a cell in another file is saved in two parts: 
-	     * The referenced file is stored in an reference table. the row/cell information is saved separate.
-	     * This method invokation will only change the reference in the lookup-table itself.
-	     * @param oldUrl The old URL to search for and which is to be replaced
-	     * @param newUrl The URL replacement
-	     * @return true if the oldUrl was found and replaced with newUrl. Otherwise false
-	     */
+         * Changes an external referenced file to another file.
+         * A formular in Excel which refers a cell in another file is saved in two parts: 
+         * The referenced file is stored in an reference table. the row/cell information is saved separate.
+         * This method invokation will only change the reference in the lookup-table itself.
+         * @param oldUrl The old URL to search for and which is to be replaced
+         * @param newUrl The URL replacement
+         * @return true if the oldUrl was found and replaced with newUrl. Otherwise false
+         */
         public bool ChangeExternalReference(String oldUrl, String newUrl)
         {
             return workbook.ChangeExternalReference(oldUrl, newUrl);
@@ -2024,11 +2244,6 @@ namespace NPOI.HSSF.UserModel
         public bool Remove(ISheet item)
         {
             return this._sheets.Remove((HSSFSheet)item);
-        }
-
-        IEnumerator<ISheet> IEnumerable<ISheet>.GetEnumerator()
-        {
-            throw new NotImplementedException();
         }
     }
 }

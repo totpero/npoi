@@ -54,7 +54,7 @@ namespace NPOI.XSSF.UserModel
          */
         private CT_Chart chart;
 
-        List<IChartAxis> axis;
+        List<IChartAxis> axis = new List<IChartAxis>();
 
         /**
          * Create a new SpreadsheetML chart
@@ -62,8 +62,6 @@ namespace NPOI.XSSF.UserModel
         public XSSFChart()
             : base()
         {
-
-            axis = new List<IChartAxis>();
             CreateChart();
         }
 
@@ -134,7 +132,7 @@ namespace NPOI.XSSF.UserModel
         }
 
 
-        protected override void Commit()
+        protected internal override void Commit()
         {
             //XmlOptions xmlOptions = new XmlOptions(DEFAULT_XML_OPTIONS);
 
@@ -166,14 +164,20 @@ namespace NPOI.XSSF.UserModel
             this.frame = frame;
         }
 
-        public IChartDataFactory GetChartDataFactory()
+        public IChartDataFactory ChartDataFactory
         {
-            return XSSFChartDataFactory.GetInstance();
+            get
+            {
+                return XSSFChartDataFactory.GetInstance();
+            }
         }
 
-        public IChartAxisFactory GetChartAxisFactory()
+        public IChartAxisFactory ChartAxisFactory
         {
-            return this;
+            get
+            {
+                return this;
+            }
         }
 
         public void Plot(IChartData data, params IChartAxis[] axis)
@@ -194,7 +198,19 @@ namespace NPOI.XSSF.UserModel
             axis.Add(valueAxis);
             return valueAxis;
         }
-
+        public IChartAxis CreateCategoryAxis(AxisPosition pos)
+        {
+            long id = axis.Count + 1;
+            XSSFCategoryAxis categoryAxis = new XSSFCategoryAxis(this, id, pos);
+            if (axis.Count == 1)
+            {
+                IChartAxis ax = axis[0];
+                ax.CrossAxis(categoryAxis);
+                categoryAxis.CrossAxis(ax);
+            }
+            axis.Add(categoryAxis);
+            return categoryAxis;
+        }
         public List<IChartAxis> GetAxis()
         {
             if (axis.Count == 0 && HasAxis())
@@ -275,9 +291,18 @@ namespace NPOI.XSSF.UserModel
 
         private void ParseAxis()
         {
+            ParseCategoryAxis();
             ParseValueAxis();
         }
-
+        private void ParseCategoryAxis()
+        {
+            if (chart.plotArea.catAx == null)
+                return;
+            foreach (CT_CatAx catAx in chart.plotArea.catAx)
+            {
+                axis.Add(new XSSFCategoryAxis(this, catAx));
+            }
+        }
         private void ParseValueAxis()
         {
             if (chart.plotArea.valAx == null)

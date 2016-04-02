@@ -112,7 +112,7 @@ namespace NPOI.XSSF.UserModel
          *
          * @return an iterator over cells in this row.
          */
-        public IEnumerator GetEnumerator()
+        public IEnumerator<ICell> GetEnumerator()
         {
             return CellIterator();
         }
@@ -451,7 +451,7 @@ namespace NPOI.XSSF.UserModel
                 if (!IsFormatted) return null;
 
                 StylesTable stylesSource = ((XSSFWorkbook)Sheet.Workbook).GetStylesSource();
-                if (stylesSource.GetNumCellStyles() > 0)
+                if (stylesSource.NumCellStyles > 0)
                 {
                     return stylesSource.GetStyleAt((int)_row.s);
                 }
@@ -637,6 +637,17 @@ namespace NPOI.XSSF.UserModel
             return CellUtil.CopyCell(this, sourceIndex, targetIndex);
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+        public int OutlineLevel
+        {
+            get
+            {
+                return _row.outlineLevel;
+            }
+        }
         #endregion
     }
 

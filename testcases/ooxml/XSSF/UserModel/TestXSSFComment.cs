@@ -15,15 +15,15 @@
    limitations under the License.
 ==================================================================== */
 
-using NPOI.SS.Util;
-using NUnit.Framework;
-using NPOI.XSSF.Model;
 using System;
-using TestCases.SS.UserModel;
-using NPOI.OpenXmlFormats.Spreadsheet;
 using NPOI.HSSF.UserModel;
-using NPOI.SS.UserModel;
+using NPOI.OpenXmlFormats.Spreadsheet;
 using NPOI.OpenXmlFormats.Vml;
+using NPOI.SS.UserModel;
+using NPOI.SS.Util;
+using NPOI.XSSF.Model;
+using NUnit.Framework;
+using TestCases.SS.UserModel;
 namespace NPOI.XSSF.UserModel
 {
     /**
@@ -45,7 +45,7 @@ namespace NPOI.XSSF.UserModel
          * Test properties of a newly constructed comment
          */
         [Test]
-        public void TestConstructor()
+        public void Constructor()
         {
             CommentsTable sheetComments = new CommentsTable();
             Assert.IsNotNull(sheetComments.GetCTComments().commentList);
@@ -53,7 +53,7 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(1, sheetComments.GetCTComments().authors.SizeOfAuthorArray());
             Assert.AreEqual(1, sheetComments.GetNumberOfAuthors());
 
-            CT_Comment ctComment = sheetComments.CreateComment();
+            CT_Comment ctComment = sheetComments.NewComment("A1");
             CT_Shape vmlShape = new CT_Shape();
 
             XSSFComment comment = new XSSFComment(sheetComments, ctComment, vmlShape);
@@ -64,11 +64,11 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(false, comment.Visible);
         }
         [Test]
-        public void TestGetSetCol()
+        public void GetSetCol()
         {
             CommentsTable sheetComments = new CommentsTable();
             XSSFVMLDrawing vml = new XSSFVMLDrawing();
-            CT_Comment ctComment = sheetComments.CreateComment();
+            CT_Comment ctComment = sheetComments.NewComment("A1");
             CT_Shape vmlShape = vml.newCommentShape();
 
             XSSFComment comment = new XSSFComment(sheetComments, ctComment, vmlShape);
@@ -83,11 +83,11 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(5, vmlShape.GetClientDataArray(0).GetColumnArray(0));
         }
         [Test]
-        public void TestGetSetRow()
+        public void GetSetRow()
         {
             CommentsTable sheetComments = new CommentsTable();
             XSSFVMLDrawing vml = new XSSFVMLDrawing();
-            CT_Comment ctComment = sheetComments.CreateComment();
+            CT_Comment ctComment = sheetComments.NewComment("A1");
             CT_Shape vmlShape = vml.newCommentShape();
 
             XSSFComment comment = new XSSFComment(sheetComments, ctComment, vmlShape);
@@ -102,7 +102,7 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(5, vmlShape.GetClientDataArray(0).GetRowArray(0));
         }
         [Test]
-        public void TestSetString()
+        public void SetString()
         {
             XSSFWorkbook wb = new XSSFWorkbook();
             XSSFSheet sh = (XSSFSheet)wb.CreateSheet();
@@ -156,12 +156,14 @@ namespace NPOI.XSSF.UserModel
             Assert.AreEqual(8.5, rPr.GetSzArray(0).val);
             Assert.AreEqual(IndexedColors.BlueGrey.Index, (short)rPr.GetColorArray(0).indexed);
             Assert.AreEqual("Tahoma", rPr.GetRFontArray(0).val);
+
+            Assert.IsNotNull(XSSFTestDataSamples.WriteOutAndReadBack(wb));
         }
         [Test]
-        public void TestAuthor()
+        public void Author()
         {
             CommentsTable sheetComments = new CommentsTable();
-            CT_Comment ctComment = sheetComments.CreateComment();
+            CT_Comment ctComment = sheetComments.NewComment("A1");
 
             Assert.AreEqual(1, sheetComments.GetNumberOfAuthors());
             XSSFComment comment = new XSSFComment(sheetComments, ctComment, null);

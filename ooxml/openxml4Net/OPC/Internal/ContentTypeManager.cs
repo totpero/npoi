@@ -5,6 +5,7 @@ using NPOI.OpenXml4Net.Exceptions;
 using System.IO;
 using System.Xml;
 using System.Xml.XPath;
+using NPOI.Util;
 
 namespace NPOI.OpenXml4Net.OPC.Internal
 {
@@ -75,10 +76,9 @@ namespace NPOI.OpenXml4Net.OPC.Internal
                 {
                     ParseContentTypesFile(in1);
                 }
-                catch (InvalidFormatException)
+                catch (InvalidFormatException ex)
                 {
-                    throw new InvalidFormatException(
-                            "Can't read content types part !");
+                    throw new InvalidFormatException("Can't read content types part !", ex);
                 }
             }
         }
@@ -376,7 +376,7 @@ namespace NPOI.OpenXml4Net.OPC.Internal
             {
 
                 //in1.Position = 0;
-                XPathDocument xpathdoc = new XPathDocument(in1);
+                XPathDocument xpathdoc = DocumentHelper.ReadDocument(in1);
                 XPathNavigator xpathnav = xpathdoc.CreateNavigator();
                 XmlNamespaceManager nsMgr = new XmlNamespaceManager(xpathnav.NameTable);
                 nsMgr.AddNamespace("x", TYPES_NAMESPACE_URI);
@@ -397,7 +397,7 @@ namespace NPOI.OpenXml4Net.OPC.Internal
 
                     // Overriden content types
                     //iterator.Current.MoveToNext();
-                    Uri uri = new Uri(iterator.Current.GetAttribute(PART_NAME_ATTRIBUTE_NAME, xpathnav.NamespaceURI),UriKind.RelativeOrAbsolute);
+                    Uri uri = PackagingUriHelper.ParseUri(iterator.Current.GetAttribute(PART_NAME_ATTRIBUTE_NAME, xpathnav.NamespaceURI), UriKind.RelativeOrAbsolute);
                     PackagePartName partName = PackagingUriHelper
                             .CreatePartName(uri);
                     String contentType = iterator.Current.GetAttribute(CONTENT_TYPE_ATTRIBUTE_NAME, xpathnav.NamespaceURI);

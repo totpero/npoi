@@ -198,6 +198,12 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         {
             return this.bookViewsField != null;
         }
+
+        public bool IsSetExternalReferences()
+        {
+            return this.externalReferencesField != null;
+        }
+
         public bool IsSetDefinedNames()
         {
             return this.definedNamesField != null;
@@ -471,6 +477,17 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             {
                 this.extLstField = value;
             }
+        }
+
+        public bool IsSetPivotCaches()
+        {
+            return this.pivotCachesField != null;
+        }
+
+        public CT_PivotCaches AddNewPivotCaches()
+        {
+            this.pivotCachesField = new CT_PivotCaches();
+            return this.pivotCachesField;
         }
     }
 }

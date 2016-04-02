@@ -4,27 +4,25 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using NPOI.OpenXml4Net.Exceptions;
+using System.Collections;
 
 namespace NPOI.OpenXml4Net.OPC.Internal
 {
     /**
      * Represents a immutable MIME ContentType value (RFC 2616 &#167;3.7)
-     * <p>
      * media-type = type "/" subtype *( ";" parameter ) type = token<br>
      * subtype = token<br>
-     * </p><p>
+
      * Rule M1.13 : Package implementers shall only create and only recognize parts
      * with a content type; format designers shall specify a content type for each
      * part included in the format. Content types for package parts shall fit the
      * definition and syntax for media types as specified in RFC 2616, \&#167;3.7.
-     * </p><p>
      * Rule M1.14: Content types shall not use linear white space either between the
      * type and subtype or between an attribute and its value. Content types also
      * shall not have leading or trailing white spaces. Package implementers shall
      * create only such content types and shall require such content types when
      * retrieving a part from a package; format designers shall specify only such
      * content types for inclusion in the format.
-     * </p>
      * @author Julien Chable
      * @version 0.1
      *
@@ -47,13 +45,23 @@ namespace NPOI.OpenXml4Net.OPC.Internal
         /**
          * Parameters
          */
-        private SortedList<String, String> parameters;
+        Hashtable p;
+        private Dictionary<String, String> parameters;
 
         /**
          * Media type compiled pattern for parameters.
          */
-        private static Regex patternMediaType;
+        private static Regex patternTypeSubType;
 
+        /**
+         * Media type compiled pattern, with parameters.
+         */
+        private static Regex patternTypeSubTypeParams;
+        /**
+         * Pattern to match on just the parameters part, to work
+         * around the Java Regexp group capture behaviour
+         */
+        private static Regex patternParams;
         static ContentType()
         {
             /*
@@ -66,7 +74,8 @@ namespace NPOI.OpenXml4Net.OPC.Internal
              *
              * CHAR = <any US-ASCII character (octets 0 - 127)>
              */
-            String token = "[^\\(\\)<>@,;:\\\\/\"\\[\\]\\?={}\\s]";
+            //String token = "[\\x21-\\x7E&&[^\\(\\)<>@,;:\\\\/\"\\[\\]\\?={}\\x20\\x09]]";
+            string token = @"[\x21\x23-\x27\x2A\x2B\x2D\x2E0-9A-Z\x5E\x5F\x60a-z\x7E]";
 
             /*
              * parameter = attribute "=" value
@@ -75,8 +84,7 @@ namespace NPOI.OpenXml4Net.OPC.Internal
              *
              * value = token | quoted-string
              */
-            // Keep for future use with parameter:
-            // String parameter = "(" + token + "+)=(\"?" + token + "+\"?)";
+            String parameter = "(" + token + "+)=(\"?" + token + "+\"?)";
             /*
              * Pattern for media type.
              *
@@ -103,11 +111,9 @@ namespace NPOI.OpenXml4Net.OPC.Internal
              * quoted-pair = "\" CHAR
              */
 
-            // Keep for future use with parameter:
-            // patternMediaType = Pattern.compile("^(" + token + "+)/(" + token
-            // + "+)(;" + parameter + ")*$");
-            patternMediaType = new Regex("^(" + token + "+)/(" + token
-                    + "+)$");
+            patternTypeSubType = new Regex("^(" + token + "+)/(" + token + "+)$");
+            patternTypeSubTypeParams = new Regex("^(" + token + "+)/(" + token + "+)(;" + parameter + ")*$");
+            patternParams = new Regex(";" + parameter);
         }
 
         /**
@@ -120,43 +126,71 @@ namespace NPOI.OpenXml4Net.OPC.Internal
          */
         public ContentType(String contentType)
         {
-            Match mMediaType = patternMediaType.Match(contentType);
+            Match mMediaType = patternTypeSubType.Match(contentType);
             if (!mMediaType.Success)
+                // How about with parameters?
+                mMediaType = patternTypeSubTypeParams.Match(contentType);
+            if (!mMediaType.Success)
+            {
                 throw new InvalidFormatException(
                         "The specified content type '"
                                 + contentType
                                 + "' is not compliant with RFC 2616: malformed content type.");
-
+            }
             // Type/subtype
             if (mMediaType.Groups.Count >= 2)
             {
                 this.type = mMediaType.Groups[1].Value;
                 this.subType = mMediaType.Groups[2].Value;
                 // Parameters
-                this.parameters = new SortedList<String, String>();
-                for (int i = 4; i <= mMediaType.Groups.Count
-                        && (mMediaType.Groups[i] != null); i += 2)
+                this.parameters = new Dictionary<String, String>();
+                // Java RegExps are unhelpful, and won't do multiple group captures
+                // See http://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html#cg
+                if (mMediaType.Groups.Count >= 5)
                 {
-                    this.parameters[mMediaType.Groups[i].Value] = mMediaType
-                            .Groups[i + 1].Value;
+                    Match mParams = patternParams.Match(contentType.Substring(mMediaType.Groups[2].Index + mMediaType.Groups[2].Length));
+                    while (mParams.Success)
+                    {
+                        this.parameters.Add(mParams.Groups[1].Value, mParams.Groups[2].Value);
+                        mParams = mParams.NextMatch();
+                    }
                 }
             }
         }
-
-
         public override String ToString()
+        {
+            return ToString(true);
+        }
+        public String ToString(bool withParameters)
         {
             StringBuilder retVal = new StringBuilder();
             retVal.Append(this.Type);
             retVal.Append("/");
             retVal.Append(this.SubType);
-            // Keep for future implementation if needed
-            // for (String key : parameters.keySet()) {
-            // retVal.Append(";");
-            // retVal.Append(key);
-            // retVal.Append("=");
-            // retVal.Append(parameters.get(key));
-            // }
+            if (withParameters)
+            {
+                foreach (String key in parameters.Keys)
+                {
+                    retVal.Append(";");
+                    retVal.Append(key);
+                    retVal.Append("=");
+                    retVal.Append(parameters[key]);
+                }
+            }
+            return retVal.ToString();
+        }
+        public String ToStringWithParameters()
+        {
+            StringBuilder retVal = new StringBuilder();
+            retVal.Append(ToString());
+
+            foreach (String key in parameters.Keys)
+            {
+                retVal.Append(";");
+                retVal.Append(key);
+                retVal.Append("=");
+                retVal.Append(parameters[(key)]);
+            }
             return retVal.ToString();
         }
 
@@ -204,15 +238,43 @@ namespace NPOI.OpenXml4Net.OPC.Internal
         }
 
         /**
+         * Does this content type have any parameters associated with it?
+         */
+        public bool HasParameters()
+        {
+            return (parameters != null) && !(parameters.Count == 0);
+        }
+
+        /**
+         * Return the parameter keys
+         */
+        public String[] GetParameterKeys()
+        {
+            if (parameters == null)
+                return new String[0];
+            List<string> keys = new List<string>();
+            keys.AddRange(parameters.Keys);
+            return keys.ToArray();
+        }
+
+        /**
          * Gets the value associated to the specified key.
          *
          * @param key
          *            The key of the key/value pair.
          * @return The value associated to the specified key.
          */
-        public String GetParameters(String key)
+        public String GetParameter(String key)
         {
             return parameters[key];
+        }
+
+        /**
+     * @deprecated Use {@link #getParameter(String)} instead
+     */
+        public String GetParameters(String key)
+        {
+            return GetParameter(key);
         }
 
         #region IComparable Members

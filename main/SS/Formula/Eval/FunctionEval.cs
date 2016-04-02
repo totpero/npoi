@@ -108,7 +108,7 @@ namespace NPOI.SS.Formula.Eval
             retval[11] = new Npv(); // NPV
             retval[12] = AggregateFunction.STDEV; // STDEV
             retval[13] = NumericFunction.DOLLAR; // DOLLAR
-            retval[14] = new NotImplementedFunction("FIXED"); // FIXED
+            retval[14] = new Fixed(); // FIXED
             retval[15] = NumericFunction.SIN; // SIN
             retval[16] = NumericFunction.COS; // COS
             retval[17] = NumericFunction.TAN; // TAN
@@ -124,7 +124,7 @@ namespace NPOI.SS.Formula.Eval
             retval[27] = NumericFunction.ROUND; // ROUND
             retval[28] = new Lookup(); // LOOKUP
             retval[29] = new Index(); // INDEX
-            retval[30] = new NotImplementedFunction("REPT"); // REPT
+            retval[30] = new Rept(); // REPT
             retval[31] = TextFunction.MID; // MID
             retval[32] = TextFunction.LEN; // LEN
             retval[33] = new Value(); // VALUE
@@ -137,7 +137,7 @@ namespace NPOI.SS.Formula.Eval
             retval[40] = new NotImplementedFunction("DCOUNT"); // DCOUNT
             retval[41] = new NotImplementedFunction("DSUM"); // DSUM
             retval[42] = new NotImplementedFunction("DAVERAGE"); // DAVERAGE
-            retval[43] = new NotImplementedFunction("DMIN"); // DMIN
+            retval[43] = new DStarRunner(new DMin()); // DMIN
             retval[44] = new NotImplementedFunction("DMAX"); // DMAX
             retval[45] = new NotImplementedFunction("DSTDEV"); // DSTDEV
             retval[46] = AggregateFunction.VAR; // VAR
@@ -154,7 +154,7 @@ namespace NPOI.SS.Formula.Eval
             retval[58] = FinanceFunction.NPER; // NPER
             retval[59] = FinanceFunction.PMT; // PMT
             retval[60] = new Rate(); // RATE
-            retval[61] = new NotImplementedFunction("MIRR"); // MIRR
+            retval[61] = new Mirr(); // MIRR
             retval[62] = new Irr(); // IRR
             retval[63] = new Rand(); // RAND
             retval[64] = new Match(); // MATCH
@@ -207,14 +207,14 @@ namespace NPOI.SS.Formula.Eval
             retval[111] = TextFunction.CHAR; // CHAR
             retval[112] = TextFunction.LOWER; // LOWER
             retval[113] = TextFunction.UPPER; // UPPER
-            retval[114] = new NotImplementedFunction("PROPER"); // PROPER
+            retval[114] = TextFunction.PROPER; // PROPER
             retval[115] = TextFunction.LEFT; // LEFT
             retval[116] = TextFunction.RIGHT; // RIGHT
             retval[117] = TextFunction.EXACT; // EXACT
             retval[118] = TextFunction.TRIM; // TRIM
             retval[119] = new Replace(); // Replace
             retval[120] = new Substitute(); // SUBSTITUTE
-            retval[121] = new NotImplementedFunction("CODE"); // CODE
+            retval[121] = new Code(); // CODE
             retval[122] = new NotImplementedFunction("NAMES"); // NAMES
             retval[123] = new NotImplementedFunction("DIRECTORY"); // DIRECTORY
             retval[124] = TextFunction.FIND; // Find
@@ -260,8 +260,8 @@ namespace NPOI.SS.Formula.Eval
             retval[164] = new NotImplementedFunction("MINVERSE"); // MINVERSE
             retval[165] = new NotImplementedFunction("MMULT"); // MMULT
             retval[166] = new NotImplementedFunction("FILES"); // FILES
-            retval[167] = new NotImplementedFunction("IPMT"); // IPMT
-            retval[168] = new NotImplementedFunction("PPMT"); // PPMT
+            retval[167] = new IPMT();
+            retval[168] = new PPMT();
             retval[169] = new Counta(); // COUNTA
             retval[170] = new NotImplementedFunction("CANCELKEY"); // CANCELKEY
             retval[175] = new NotImplementedFunction("INITIATE"); // INITIATE
@@ -316,7 +316,7 @@ namespace NPOI.SS.Formula.Eval
             retval[232] = NumericFunction.ASINH; // ASINH
             retval[233] = NumericFunction.ACOSH; // ACOSH
             retval[234] = NumericFunction.ATANH; // ATANH
-            retval[235] = new NotImplementedFunction("DGet"); // DGet
+            retval[235] = new DStarRunner(new DGet());// DGet
             retval[236] = new NotImplementedFunction("CreateOBJECT"); // CreateOBJECT
             retval[237] = new NotImplementedFunction("VOLATILE"); // VOLATILE
             retval[238] = new NotImplementedFunction("LASTERROR"); // LASTERROR
@@ -390,11 +390,11 @@ namespace NPOI.SS.Formula.Eval
             retval[308] = new NotImplementedFunction("COVAR"); // COVAR
             retval[309] = new NotImplementedFunction("FORECAST"); // FORECAST
             retval[310] = new NotImplementedFunction("FTEST"); // FTEST
-            retval[311] = new NotImplementedFunction("INTERCEPT"); // INTERCEPT
+            retval[311] = new Intercept(); // INTERCEPT
             retval[312] = new NotImplementedFunction("PEARSON"); // PEARSON
             retval[313] = new NotImplementedFunction("RSQ"); // RSQ
             retval[314] = new NotImplementedFunction("STEYX"); // STEYX
-            retval[315] = new NotImplementedFunction("SLOPE"); // SLOPE
+            retval[315] = new Slope(); // SLOPE
             retval[316] = new NotImplementedFunction("TTEST"); // TTEST
             retval[317] = new NotImplementedFunction("PROB"); // PROB
             retval[318] = AggregateFunction.DEVSQ; // DEVSQ
@@ -407,7 +407,7 @@ namespace NPOI.SS.Formula.Eval
             retval[325] = AggregateFunction.LARGE; // LARGE
             retval[326] = AggregateFunction.SMALL; // SMALL
             retval[327] = new NotImplementedFunction("QUARTILE"); // QUARTILE
-            retval[328] = new NotImplementedFunction("PERCENTILE"); // PERCENTILE
+            retval[328] = AggregateFunction.PERCENTILE; // PERCENTILE
             retval[329] = new NotImplementedFunction("PERCENTRANK"); // PERCENTRANK
             retval[330] = new Mode(); // MODE
             retval[331] = new NotImplementedFunction("TRIMMEAN"); // TRIMMEAN
@@ -433,7 +433,7 @@ namespace NPOI.SS.Formula.Eval
             retval[351] = new NotImplementedFunction("DATEDIF"); // DATEDIF
             retval[352] = new NotImplementedFunction("DATESTRING"); // DATESTRING
             retval[353] = new NotImplementedFunction("NUMBERSTRING"); // NUMBERSTRING
-            retval[354] = new NotImplementedFunction("ROMAN"); // ROMAN
+            retval[354] = new Roman(); // ROMAN
             retval[355] = new NotImplementedFunction("OPENDIALOG"); // OPENDIALOG
             retval[356] = new NotImplementedFunction("SAVEDIALOG"); // SAVEDIALOG
             retval[357] = new NotImplementedFunction("VIEWGet"); // VIEWGet

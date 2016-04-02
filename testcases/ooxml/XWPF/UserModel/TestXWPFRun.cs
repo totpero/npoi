@@ -71,7 +71,7 @@ namespace NPOI.XWPF.UserModel
             XWPFRun run = new XWPFRun(ctRun, p);
             Assert.AreEqual(true, run.IsBold);
 
-            run.SetBold(false);
+            run.IsBold = (false);
             Assert.AreEqual(false, run.IsBold);
             Assert.AreEqual(false, rpr.b.val);
         }
@@ -123,9 +123,9 @@ namespace NPOI.XWPF.UserModel
             rpr.AddNewVertAlign().val = (ST_VerticalAlignRun.subscript);
 
             XWPFRun run = new XWPFRun(ctRun, p);
-            Assert.AreEqual(VerticalAlign.SUBSCRIPT, run.GetSubscript());
+            Assert.AreEqual(VerticalAlign.SUBSCRIPT, run.Subscript);
 
-            run.SetSubscript(VerticalAlign.BASELINE);
+            run.Subscript = (VerticalAlign.BASELINE);
             Assert.AreEqual(ST_VerticalAlignRun.baseline, rpr.vertAlign.val);
         }
 
@@ -137,9 +137,9 @@ namespace NPOI.XWPF.UserModel
             rpr.AddNewRFonts().ascii = ("Times New Roman");
 
             XWPFRun run = new XWPFRun(ctRun, p);
-            Assert.AreEqual("Times New Roman", run.GetFontFamily());
+            Assert.AreEqual("Times New Roman", run.FontFamily);
 
-            run.SetFontFamily("Verdana");
+            run.FontFamily = ("Verdana");
             Assert.AreEqual("Verdana", rpr.rFonts.ascii);
         }
 
@@ -153,7 +153,7 @@ namespace NPOI.XWPF.UserModel
             XWPFRun run = new XWPFRun(ctRun, p);
             Assert.AreEqual(7, run.FontSize);
 
-            run.SetFontSize(24);
+            run.FontSize = (24);
             Assert.AreEqual(48, (int)rpr.sz.val);
         }
 
@@ -190,14 +190,39 @@ namespace NPOI.XWPF.UserModel
             Assert.AreEqual(2, ctRun.SizeOfCrArray());
 
             XWPFRun run = new XWPFRun(new CT_R(), p);
-            run.SetText("T1");
+            run.AppendText("T1");
             run.AddCarriageReturn();
             run.AddCarriageReturn();
-            run.SetText("T2");
+            run.AppendText("T2");
             run.AddCarriageReturn();
             Assert.AreEqual(3, run.GetCTR().GetCrList().Count);
+            Assert.AreEqual("T1\n\nT2\n", run.ToString());
 
         }
+
+        [Test]
+        public void TestAddTabsAndLineBreaks()
+        {
+            ctRun.AddNewT().Value=("TEST STRING");
+            ctRun.AddNewCr();
+            ctRun.AddNewT().Value = (/*setter*/"TEST2 STRING");
+            ctRun.AddNewTab();
+            ctRun.AddNewT().Value = (/*setter*/"TEST3 STRING");
+            Assert.AreEqual(1, ctRun.SizeOfCrArray());
+            Assert.AreEqual(1, ctRun.SizeOfTabArray());
+
+            XWPFRun run = new XWPFRun(new CT_R(), p);
+            run.AppendText("T1");
+            run.AddCarriageReturn();
+            run.AppendText("T2");
+            run.AddTab();
+            run.AppendText("T3");
+            Assert.AreEqual(1, run.GetCTR().GetCrList().Count);
+            Assert.AreEqual(1, run.GetCTR().GetTabList().Count);
+
+            Assert.AreEqual("T1\nT2\tT3", run.ToString());
+        }
+
 
         [Test]
         public void TestAddPageBreak()
@@ -419,7 +444,7 @@ namespace NPOI.XWPF.UserModel
                         String text = run.GetText(0);
                         if (text != null)
                         {
-                            run.SetFontFamily("Times New Roman");
+                            run.FontFamily = ("Times New Roman");
                         }
                     }
                 }

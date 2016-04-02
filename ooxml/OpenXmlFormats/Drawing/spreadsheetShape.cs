@@ -224,7 +224,10 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
 
         public void SetPArray(CT_TextParagraph[] array)
         {
-            pField = new List<CT_TextParagraph>(array);
+            if (array == null)
+                pField.Clear();
+            else
+                pField = new List<CT_TextParagraph>(array);
         }
         public CT_TextParagraph AddNewP()
         {
@@ -295,6 +298,18 @@ namespace NPOI.OpenXmlFormats.Dml.Spreadsheet
             {
                 this.pField = value;
             }
+        }
+
+        public CT_TextParagraph GetPArray(int pos)
+        {
+            if (p == null)
+                return null;
+            return p[pos];
+        }
+
+        public int SizeOfPArray()
+        {
+            return p.Count;
         }
     }
 

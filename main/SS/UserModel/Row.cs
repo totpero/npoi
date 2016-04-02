@@ -43,7 +43,7 @@ namespace NPOI.SS.UserModel
     /// <summary>
     /// High level representation of a row of a spreadsheet.
     /// </summary>    
-    public interface IRow
+    public interface IRow : IEnumerable<ICell>
     {
         /// <summary>
         /// Use this to create new cells within the row and return it.
@@ -171,11 +171,6 @@ namespace NPOI.SS.UserModel
         /// can get the formatting from <see cref="RowStyle"/>
         /// </summary>
         bool IsFormatted { get; }
-        /// <summary>
-        /// Cell iterator of the physically defined cells.  Note element 4 may
-        /// actually be row cell depending on how many are defined!
-        /// </summary>
-        IEnumerator GetEnumerator();
 
         /// <summary>
         /// Returns the Sheet this row belongs to
@@ -214,6 +209,13 @@ namespace NPOI.SS.UserModel
         /// Get cells in the row
         /// </summary>
         List<ICell> Cells { get; }
+
+        /// <summary>
+        /// Returns the rows outline level. Increased as you
+        /// put it into more groups (outlines), reduced as
+        /// you take it out of them.
+        /// </summary>
+        int OutlineLevel { get; }
     }
 }
 

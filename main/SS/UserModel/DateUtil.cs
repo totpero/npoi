@@ -43,6 +43,18 @@ namespace NPOI.SS.UserModel
         public const long DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
         private static readonly char[] TIME_SEPARATOR_PATTERN = new char[] { ':' };
 
+        /**
+         * The following patterns are used in {@link #isADateFormat(int, String)}
+         */
+        private static Regex date_ptrn1 = new Regex("^\\[\\$\\-.*?\\]");
+        private static Regex date_ptrn2 = new Regex("^\\[[a-zA-Z]+\\]");
+        private static Regex date_ptrn3a = new Regex("[yYmMdDhHsS]");
+        private static Regex date_ptrn3b = new Regex("^[\\[\\]yYmMdDhHsS\\-T/,. :\"\\\\]+0*[ampAMP/]*$");
+        //  elapsed time patterns: [h],[m] and [s]
+        //private static Regex date_ptrn4 = new Regex("^\\[([hH]+|[mM]+|[sS]+)\\]");
+        private static Regex date_ptrn4 = new Regex("^\\[([hH]+|[mM]+|[sS]+)\\]$");
+
+
         /// <summary>
         /// Given a Calendar, return the number of days since 1899/12/31.
         /// </summary>
@@ -236,35 +248,50 @@ namespace NPOI.SS.UserModel
          */
         public static DateTime GetJavaDate(double date, bool use1904windowing)
         {
-            /*if (!IsValidExcelDate(date))
-            {
-                throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, "Invalid Excel date double value: {0}", date));
-            }
-            int startYear = 1900;
-            int dayAdjust = -1; // Excel thinks 2/29/1900 Is a valid date, which it Isn't
-            int wholeDays = (int)Math.Floor(date);
-            if (use1904windowing)
-            {
-                startYear = 1904;
-                dayAdjust = 1; // 1904 date windowing uses 1/2/1904 as the first day
-            }
-            else if (wholeDays < 61)
-            {
-                // Date Is prior to 3/1/1900, so adjust because Excel thinks 2/29/1900 exists
-                // If Excel date == 2/29/1900, will become 3/1/1900 in Java representation
-                dayAdjust = 0;
-            }
-            DateTime startdate = new DateTime(startYear, 1, 1);
-            startdate = startdate.AddDays(wholeDays + dayAdjust - 1);
-            double millisecondsInDay = (int)((date - wholeDays) *
-                                          DAY_MILLISECONDS + 0.5);
-            return startdate.AddMilliseconds(millisecondsInDay);*/
-
-            return GetJavaCalendar(date, use1904windowing);
+            return GetJavaCalendar(date, use1904windowing, false);
+        }
+        /**
+         *  Given an Excel date with either 1900 or 1904 date windowing,
+         *  converts it to a java.util.Date.
+         *  
+         *  Excel Dates and Times are stored without any timezone 
+         *  information. If you know (through other means) that your file 
+         *  uses a different TimeZone to the system default, you can use
+         *  this version of the getJavaDate() method to handle it.
+         *   
+         *  @param date  The Excel date.
+         *  @param tz The TimeZone to evaluate the date in
+         *  @param use1904windowing  true if date uses 1904 windowing,
+         *   or false if using 1900 date windowing.
+         *  @return Java representation of the date, or null if date is not a valid Excel date
+         */
+        public static DateTime getJavaDate(double date, bool use1904windowing, TimeZone tz)
+        {
+            return GetJavaCalendar(date, use1904windowing, false);
+        }
+        /**
+         *  Given an Excel date with either 1900 or 1904 date windowing,
+         *  converts it to a java.util.Date.
+         *  
+         *  Excel Dates and Times are stored without any timezone 
+         *  information. If you know (through other means) that your file 
+         *  uses a different TimeZone to the system default, you can use
+         *  this version of the getJavaDate() method to handle it.
+         *   
+         *  @param date  The Excel date.
+         *  @param tz The TimeZone to evaluate the date in
+         *  @param use1904windowing  true if date uses 1904 windowing,
+         *   or false if using 1900 date windowing.
+         *  @param roundSeconds round to closest second
+         *  @return Java representation of the date, or null if date is not a valid Excel date
+         */
+        public static DateTime GetJavaDate(double date, bool use1904windowing, TimeZone tz, bool roundSeconds)
+        {
+            return GetJavaCalendar(date, use1904windowing, roundSeconds);
         }
 
         public static void SetCalendar(ref DateTime calendar, int wholeDays,
-            int millisecondsInDay, bool use1904windowing)
+            int millisecondsInDay, bool use1904windowing, bool roundSeconds)
         {
             int startYear = 1900;
             int dayAdjust = -1; // Excel thinks 2/29/1900 is a valid date, which it isn't
@@ -280,17 +307,34 @@ namespace NPOI.SS.UserModel
                 dayAdjust = 0;
             }
             DateTime dt = (new DateTime(startYear, 1, 1)).AddDays(wholeDays + dayAdjust - 1).AddMilliseconds(millisecondsInDay);
+            if (roundSeconds)
+            {
+                dt = dt.AddMilliseconds(500);
+                dt = dt.AddMilliseconds(-dt.Millisecond);
+            }
             calendar = dt;
 
         }
-  
+        /**
+         * Get EXCEL date as Java Calendar with given time zone.
+         * @param date  The Excel date.
+         * @param use1904windowing  true if date uses 1904 windowing,
+         *  or false if using 1900 date windowing.
+         * @param timeZone The TimeZone to evaluate the date in
+         * @return Java representation of the date, or null if date is not a valid Excel date
+         */
+        public static DateTime GetJavaCalendar(double date, bool use1904windowing)
+        {
+            return GetJavaCalendar(date, use1904windowing, false);
+        }
         /// <summary>
         /// Get EXCEL date as Java Calendar (with default time zone). This is like GetJavaDate(double, boolean) but returns a Calendar object.
         /// </summary>
         /// <param name="date">The Excel date.</param>
         /// <param name="use1904windowing">true if date uses 1904 windowing, or false if using 1900 date windowing.</param>
+        /// <param name="roundSeconds"></param>
         /// <returns>null if date is not a valid Excel date</returns>
-        public static DateTime GetJavaCalendar(double date, bool use1904windowing)
+        public static DateTime GetJavaCalendar(double date, bool use1904windowing, bool roundSeconds)
         {
             if (!IsValidExcelDate(date))
             {
@@ -301,7 +345,7 @@ namespace NPOI.SS.UserModel
             DateTime calendar;
 
             calendar = DateTime.Now;     // using default time-zone
-            SetCalendar(ref calendar, wholeDays, millisecondsInDay, use1904windowing);
+            SetCalendar(ref calendar, wholeDays, millisecondsInDay, use1904windowing, roundSeconds);
             return calendar;
         }
 
@@ -354,6 +398,15 @@ namespace NPOI.SS.UserModel
             double totalSeconds = seconds + (minutes + (hours) * 60) * 60;
             return totalSeconds / (SECONDS_PER_DAY);
         }
+
+        // variables for performance optimization:
+        // avoid re-checking DataUtil.isADateFormat(int, String) if a given format
+        // string represents a date format if the same string is passed multiple times.
+        // see https://issues.apache.org/bugzilla/show_bug.cgi?id=55611
+        private static int lastFormatIndex = -1;
+        private static String lastFormatString = null;
+        private static bool cached = false;
+        private static string syncIsADateFormat = "IsADateFormat";
         /// <summary>
         /// Given a format ID and its format String, will Check to see if the
         /// format represents a date format or not.
@@ -370,88 +423,121 @@ namespace NPOI.SS.UserModel
         /// </returns>
         public static bool IsADateFormat(int formatIndex, String formatString)
         {
-            // First up, Is this an internal date format?
-            if (IsInternalDateFormat(formatIndex))
+            lock (syncIsADateFormat)
             {
-                return true;
-            }
-
-            // If we didn't Get a real string, it can't be
-            if (formatString == null || formatString.Length == 0)
-            {
-                return false;
-            }
-
-            String fs = formatString;
-
-            // If it end in ;@, that's some crazy dd/mm vs mm/dd
-            //  switching stuff, which we can ignore
-            fs = Regex.Replace(fs, ";@", "");
-            StringBuilder sb = new StringBuilder(fs.Length);
-            for (int i = 0; i < fs.Length; i++)
-            {
-                char c = fs[i];
-                if (i < fs.Length - 1)
+                if (formatString != null && formatIndex == lastFormatIndex && formatString.Equals(lastFormatString))
                 {
-                    char nc = fs[i + 1];
-                    if (c == '\\')
+                    return cached;
+                }
+                // First up, Is this an internal date format?
+                if (IsInternalDateFormat(formatIndex))
+                {
+                    lastFormatIndex = formatIndex;
+                    lastFormatString = formatString;
+                    cached = true;
+                    return true;
+                }
+
+                // If we didn't get a real string, it can't be
+                if (formatString == null || formatString.Length == 0)
+                {
+                    lastFormatIndex = formatIndex;
+                    lastFormatString = formatString;
+                    cached = false;
+                    return false;
+                }
+
+                String fs = formatString;
+
+                // If it end in ;@, that's some crazy dd/mm vs mm/dd
+                //  switching stuff, which we can ignore
+                fs = Regex.Replace(fs, ";@", "");
+                StringBuilder sb = new StringBuilder(fs.Length);
+                for (int i = 0; i < fs.Length; i++)
+                {
+                    char c = fs[i];
+                    if (i < fs.Length - 1)
                     {
-                        switch (nc)
+                        char nc = fs[i + 1];
+                        if (c == '\\')
                         {
-                            case '-':
-                            case ',':
-                            case '.':
-                            case ' ':
-                            case '\\':
-                                // skip current '\' and continue to the next char
-                                continue;
+                            switch (nc)
+                            {
+                                case '-':
+                                case ',':
+                                case '.':
+                                case ' ':
+                                case '\\':
+                                    // skip current '\' and continue to the next char
+                                    continue;
+                            }
+                        }
+                        else if (c == ';' && nc == '@')
+                        {
+                            i++;
+                            // skip ";@" duplets
+                            continue;
                         }
                     }
-                    else if (c == ';' && nc == '@')
-                    {
-                        i++;
-                        // skip ";@" duplets
-                        continue;
-                    }
+                    sb.Append(c);
                 }
-                sb.Append(c);
+                fs = sb.ToString();
+
+
+                // short-circuit if it indicates elapsed time: [h], [m] or [s]
+                //if (Regex.IsMatch(fs, "^\\[([hH]+|[mM]+|[sS]+)\\]"))
+                if (date_ptrn4.IsMatch(fs))
+                {
+                    lastFormatIndex = formatIndex;
+                    lastFormatString = formatString;
+                    cached = true;
+                    return true;
+                }
+
+                // If it starts with [$-...], then could be a date, but
+                //  who knows what that starting bit Is all about
+                //fs = Regex.Replace(fs, "^\\[\\$\\-.*?\\]", "");
+                fs = date_ptrn1.Replace(fs, "");
+
+                // If it starts with something like [Black] or [Yellow],
+                //  then it could be a date
+                //fs = Regex.Replace(fs, "^\\[[a-zA-Z]+\\]", "");
+                fs = date_ptrn2.Replace(fs, "");
+                // You're allowed something like dd/mm/yy;[red]dd/mm/yy
+                //  which would place dates before 1900/1904 in red
+                // For now, only consider the first one
+                if (fs.IndexOf(';') > 0 && fs.IndexOf(';') < fs.Length - 1)
+                {
+                    fs = fs.Substring(0, fs.IndexOf(';'));
+                }
+                // Ensure it has some date letters in it
+                // (Avoids false positives on the rest of pattern 3)
+                if (!date_ptrn3a.Match(fs).Success)
+                //if (!Regex.Match(fs, "[yYmMdDhHsS]").Success)
+                {
+                    return false;
+                }
+
+                // If we get here, check it's only made up, in any case, of:
+                //  y m d h s - \ / , . : [ ] T
+                // optionally followed by AM/PM
+
+                // Delete any string literals.
+                fs = Regex.Replace(fs, @"""[^""\\]*(?:\\.[^""\\]*)*""", "");
+
+                //if (Regex.IsMatch(fs, @"^[\[\]yYmMdDhHsS\-/,. :\""\\]+0*[ampAMP/]*$"))
+                //{
+                //    return true;
+                //}
+
+                //return false;
+
+                bool result = date_ptrn3b.IsMatch(fs);
+                lastFormatIndex = formatIndex;
+                lastFormatString = formatString;
+                cached = result;
+                return result;
             }
-            fs = sb.ToString();
-
-
-            // short-circuit if it indicates elapsed time: [h], [m] or [s]
-            if (Regex.IsMatch(fs, "^\\[([hH]+|[mM]+|[sS]+)\\]"))
-            {
-                return true;
-            }
-
-            // If it starts with [$-...], then could be a date, but
-            //  who knows what that starting bit Is all about
-            fs = Regex.Replace(fs, "^\\[\\$\\-.*?\\]", "");
-
-            // If it starts with something like [Black] or [Yellow],
-            //  then it could be a date
-            fs = Regex.Replace(fs, "^\\[[a-zA-Z]+\\]", "");
-            // You're allowed something like dd/mm/yy;[red]dd/mm/yy
-            //  which would place dates before 1900/1904 in red
-            // For now, only consider the first one
-            if (fs.IndexOf(';') > 0 && fs.IndexOf(';') < fs.Length - 1)
-            {
-                fs = fs.Substring(0, fs.IndexOf(';'));
-            }
-            // Otherwise, Check it's only made up, in any case, of:
-            //  y m d h s - / , . :
-            // optionally followed by AM/PM
-
-            // Delete any string literals.
-            fs = Regex.Replace(fs, @"""[^""\\]*(?:\\.[^""\\]*)*""", "");
-
-            if (Regex.IsMatch(fs, @"^[\[\]yYmMdDhHsS\-/,. :\""\\]+0*[ampAMP/]*$"))
-            {
-                return true;
-            }
-
-            return false;
         }
         /// <summary>
         /// Converts a string of format "YYYY/MM/DD" to its (Excel) numeric equivalent

@@ -25,8 +25,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         private double widthField;  // optional, but width has no default value
         private bool widthSpecifiedField;
 
-        private uint styleField;// optional, as are the following attributes
-        private bool styleSpecifiedField;
+        private uint? styleField;// optional, as are the following attributes
 
         private bool hiddenField;
 
@@ -112,7 +111,7 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
         }
         public bool IsSetWidth()
         {
-            return this.widthField>0;
+            return this.widthField > 0;
         }
         public bool IsSetCollapsed()
         {
@@ -138,9 +137,8 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
 
 
 
-        [DefaultValue(typeof(uint), "0")]
         [XmlAttribute]
-        public uint style
+        public uint? style
         {
             get
             {
@@ -150,12 +148,6 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             {
                 this.styleField = value;
             }
-        }
-        [XmlIgnore]
-        public bool styleSpecified
-        {
-            get { return this.styleSpecifiedField; }
-            set { this.styleSpecifiedField = value; }
         }
 
         [DefaultValue(false)]
@@ -262,9 +254,13 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             ctObj.min = XmlHelper.ReadUInt(node.Attributes["min"]);
             ctObj.max = XmlHelper.ReadUInt(node.Attributes["max"]);
             ctObj.width = XmlHelper.ReadDouble(node.Attributes["width"]);
-            ctObj.style = XmlHelper.ReadUInt(node.Attributes["style"]);
+            if (node.Attributes["style"] != null)
+                ctObj.style = XmlHelper.ReadUInt(node.Attributes["style"]);
+            else
+                ctObj.style = null;
             ctObj.hidden = XmlHelper.ReadBool(node.Attributes["hidden"]);
             ctObj.bestFit = XmlHelper.ReadBool(node.Attributes["bestFit"]);
+            ctObj.outlineLevel = XmlHelper.ReadByte(node.Attributes["outlineLevel"]);
             ctObj.customWidth = XmlHelper.ReadBool(node.Attributes["customWidth"]);
             ctObj.phonetic = XmlHelper.ReadBool(node.Attributes["phonetic"]);
             ctObj.collapsed = XmlHelper.ReadBool(node.Attributes["collapsed"]);
@@ -279,19 +275,58 @@ namespace NPOI.OpenXmlFormats.Spreadsheet
             XmlHelper.WriteAttribute(sw, "min", this.min);
             XmlHelper.WriteAttribute(sw, "max", this.max);
             XmlHelper.WriteAttribute(sw, "width", this.width);
-            XmlHelper.WriteAttribute(sw, "style", this.style,true);
+            if(this.style!=null)
+                XmlHelper.WriteAttribute(sw, "style", (uint)this.style,true);
             XmlHelper.WriteAttribute(sw, "hidden", this.hidden,false);
             XmlHelper.WriteAttribute(sw, "bestFit", this.bestFit,false);
             XmlHelper.WriteAttribute(sw, "customWidth", this.customWidth,false);
             XmlHelper.WriteAttribute(sw, "phonetic", this.phonetic,false);
             XmlHelper.WriteAttribute(sw, "outlineLevel", this.outlineLevel);
             XmlHelper.WriteAttribute(sw, "collapsed", this.collapsed,false);
-            sw.Write(">");
-            sw.Write(string.Format("</{0}>", nodeName));
+            sw.Write("/>");
         }
 
 
 
 
+
+        public CT_Col Copy()
+        {
+            CT_Col col = new CT_Col();
+            col.bestFitField = this.bestFitField;
+            col.collapsedField = this.collapsedField;
+            col.collapsedSpecifiedField = this.collapsedSpecifiedField;
+            col.customWidthField = this.customWidthField;
+            col.hiddenField = this.hiddenField;
+            col.maxField = this.maxField;
+            col.minField = this.minField;
+            col.outlineLevelField = this.outlineLevelField;
+            col.phoneticField = this.phoneticField;
+            col.styleField = this.styleField;
+            col.widthField = this.widthField;
+            col.widthSpecifiedField = this.widthSpecifiedField;
+            
+            return col;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+            if (!(obj is CT_Col))
+                return false;
+            CT_Col col = obj as CT_Col;
+            return col.min == this.min && col.max == this.max;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.ToString().GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return string.Format("min:{0}, max:{1}, width:{2}", this.min, this.max, this.width);
+        }
     }
 }

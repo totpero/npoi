@@ -65,7 +65,7 @@ namespace TestCases.HSSF.UserModel
             wb.CreateSheet();
             wb.CreateSheet();
             HSSFSheet sheet2 = (HSSFSheet)wb.CreateSheet();
-            sheet2.RepeatingRows=(CellRangeAddress.ValueOf("1:2"));
+            sheet2.RepeatingRows = (CellRangeAddress.ValueOf("1:2"));
             NameRecord nameRecord = wb.Workbook.GetNameRecord(0);
             Assert.AreEqual(3, nameRecord.SheetNumber);
         }
@@ -93,11 +93,11 @@ namespace TestCases.HSSF.UserModel
             HSSFSheet s = (HSSFSheet)wb.CreateSheet();
             InternalSheet sheet = s.Sheet;
 
-            Assert.AreEqual(true, sheet.GridsetRecord.Gridset);
+            Assert.IsTrue(sheet.GridsetRecord.Gridset);
 #pragma warning disable 0618 //  warning CS0618: 'NPOI.HSSF.UserModel.HSSFSheet.IsGridsPrinted' is obsolete: 'Please use IsPrintGridlines instead'
             s.IsGridsPrinted = true; // <- this is marked obsolete, but using "s.IsPrintGridlines = true;" makes this test fail 8-(
 #pragma warning restore 0618
-            Assert.AreEqual(false, sheet.GridsetRecord.Gridset);
+            Assert.IsFalse(sheet.GridsetRecord.Gridset);
         }
 
         /**
@@ -111,9 +111,9 @@ namespace TestCases.HSSF.UserModel
             InternalSheet sheet = s.Sheet;
             VCenterRecord record = sheet.PageSettings.VCenter;
 
-            Assert.AreEqual(false, record.VCenter);
+            Assert.IsFalse(record.VCenter);
             s.VerticallyCenter = (true);
-            Assert.AreEqual(true, record.VCenter);
+            Assert.IsTrue(record.VCenter);
 
             // wb.Write(new FileOutputStream("c:\\Test.xls"));
         }
@@ -129,9 +129,9 @@ namespace TestCases.HSSF.UserModel
             InternalSheet sheet = s.Sheet;
             HCenterRecord record = sheet.PageSettings.HCenter;
 
-            Assert.AreEqual(false, record.HCenter);
+            Assert.IsFalse(record.HCenter);
             s.HorizontallyCenter = (true);
-            Assert.AreEqual(true, record.HCenter);
+            Assert.IsTrue(record.HCenter);
         }
 
 
@@ -148,14 +148,14 @@ namespace TestCases.HSSF.UserModel
                     (WSBoolRecord)sheet.FindFirstRecordBySid(WSBoolRecord.sid);
 
             // Check defaults
-            Assert.AreEqual(false, record.AlternateExpression);
-            Assert.AreEqual(false, record.AlternateFormula);
-            Assert.AreEqual(false, record.Autobreaks);
-            Assert.AreEqual(false, record.Dialog);
-            Assert.AreEqual(false, record.DisplayGuts);
-            Assert.AreEqual(true, record.FitToPage);
-            Assert.AreEqual(false, record.RowSumsBelow);
-            Assert.AreEqual(false, record.RowSumsRight);
+            Assert.IsFalse(record.AlternateExpression);
+            Assert.IsFalse(record.AlternateFormula);
+            Assert.IsFalse(record.Autobreaks);
+            Assert.IsFalse(record.Dialog);
+            Assert.IsFalse(record.DisplayGuts);
+            Assert.IsTrue(record.FitToPage);
+            Assert.IsFalse(record.RowSumsBelow);
+            Assert.IsFalse(record.RowSumsRight);
 
             // Alter
             s.AlternativeExpression = (false);
@@ -168,22 +168,22 @@ namespace TestCases.HSSF.UserModel
             s.RowSumsRight = true;
 
             // Check
-            Assert.AreEqual(false, record.AlternateExpression);
-            Assert.AreEqual(false, record.AlternateFormula);
-            Assert.AreEqual(true, record.Autobreaks);
-            Assert.AreEqual(true, record.Dialog);
-            Assert.AreEqual(true, record.DisplayGuts);
-            Assert.AreEqual(false, record.FitToPage);
-            Assert.AreEqual(true, record.RowSumsBelow);
-            Assert.AreEqual(true, record.RowSumsRight);
-            Assert.AreEqual(false, s.AlternativeExpression);
-            Assert.AreEqual(false, s.AlternativeFormula);
-            Assert.AreEqual(true, s.Autobreaks);
-            Assert.AreEqual(true, s.Dialog);
-            Assert.AreEqual(true, s.DisplayGuts);
-            Assert.AreEqual(false, s.FitToPage);
-            Assert.AreEqual(true, s.RowSumsBelow);
-            Assert.AreEqual(true, s.RowSumsRight);
+            Assert.IsFalse(record.AlternateExpression);
+            Assert.IsFalse(record.AlternateFormula);
+            Assert.IsTrue(record.Autobreaks);
+            Assert.IsTrue(record.Dialog);
+            Assert.IsTrue(record.DisplayGuts);
+            Assert.IsFalse(record.FitToPage);
+            Assert.IsTrue(record.RowSumsBelow);
+            Assert.IsTrue(record.RowSumsRight);
+            Assert.IsFalse(s.AlternativeExpression);
+            Assert.IsFalse(s.AlternativeFormula);
+            Assert.IsTrue(s.Autobreaks);
+            Assert.IsTrue(s.Dialog);
+            Assert.IsTrue(s.DisplayGuts);
+            Assert.IsFalse(s.FitToPage);
+            Assert.IsTrue(s.RowSumsBelow);
+            Assert.IsTrue(s.RowSumsRight);
         }
         [Test]
         public void TestReadBooleans()
@@ -407,16 +407,22 @@ namespace TestCases.HSSF.UserModel
             int expectedHashB = -14556;
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFSheet hssfSheet = (HSSFSheet)workbook.CreateSheet();
+            Assert.IsFalse(hssfSheet.ObjectProtect);
             hssfSheet.ProtectSheet(passwordA);
-
+            Assert.IsTrue(hssfSheet.ObjectProtect);
             Assert.AreEqual(expectedHashA, hssfSheet.Password);
+            Assert.AreEqual(expectedHashA, hssfSheet.Sheet.ProtectionBlock.PasswordHash);
+            
 
             // Clone the sheet, and make sure the password hash is preserved
             HSSFSheet sheet2 = (HSSFSheet)workbook.CloneSheet(0);
-            Assert.AreEqual(expectedHashA, sheet2.Password);
+            Assert.IsTrue(hssfSheet.ObjectProtect);
+            Assert.AreEqual(expectedHashA, sheet2.Sheet.ProtectionBlock.PasswordHash);
 
             // change the password on the first sheet
             hssfSheet.ProtectSheet(passwordB);
+            Assert.IsTrue(hssfSheet.ObjectProtect);
+            Assert.AreEqual(expectedHashB, hssfSheet.Sheet.ProtectionBlock.PasswordHash);
             Assert.AreEqual(expectedHashB, hssfSheet.Password);
             // but the cloned sheet's password should remain unchanged
             Assert.AreEqual(expectedHashA, sheet2.Password);
@@ -530,6 +536,44 @@ namespace TestCases.HSSF.UserModel
             int sclLoc = sheet.Sheet.FindFirstRecordLocBySid(SCLRecord.sid);
             int window2Loc = sheet.Sheet.FindFirstRecordLocBySid(WindowTwoRecord.sid);
             Assert.IsTrue(sclLoc == window2Loc + 1);
+
+            // verify limits
+            try
+            {
+                sheet.SetZoom(0, 2);
+                Assert.Fail("Should catch Exception here");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Numerator must be greater than 0 and less than 65536", e.Message);
+            }
+            try
+            {
+                sheet.SetZoom(65536, 2);
+                Assert.Fail("Should catch Exception here");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Numerator must be greater than 0 and less than 65536", e.Message);
+            }
+            try
+            {
+                sheet.SetZoom(2, 0);
+                Assert.Fail("Should catch Exception here");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Denominator must be greater than 0 and less than 65536", e.Message);
+            }
+            try
+            {
+                sheet.SetZoom(2, 65536);
+                Assert.Fail("Should catch Exception here");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Denominator must be greater than 0 and less than 65536", e.Message);
+            }
         }
 
 
@@ -676,6 +720,7 @@ namespace TestCases.HSSF.UserModel
 
             //Create a region over the 2nd row and auto size the first column
             sheet.AddMergedRegion(new CellRangeAddress(1, 1, 0, 1));
+            Assert.IsNotNull(sheet.GetMergedRegion(0));
             sheet.AutoSizeColumn(0);
             HSSFWorkbook wb2 = HSSFTestDataSamples.WriteOutAndReadBack(wb);
 
@@ -716,13 +761,13 @@ namespace TestCases.HSSF.UserModel
 
             // Set a date format
             ICellStyle cs = wb.CreateCellStyle();
-            HSSFDataFormat f =(HSSFDataFormat) wb.CreateDataFormat();
+            HSSFDataFormat f = (HSSFDataFormat)wb.CreateDataFormat();
             cs.DataFormat = (/*setter*/f.GetFormat("yyyy-mm-dd MMMM hh:mm:ss"));
             r.GetCell(0).CellStyle = (/*setter*/cs);
             r.GetCell(1).CellStyle = (/*setter*/cs);
 
-            Assert.AreEqual(true, DateUtil.IsCellDateFormatted(r.GetCell(0)));
-            Assert.AreEqual(true, DateUtil.IsCellDateFormatted(r.GetCell(1)));
+            Assert.IsTrue(DateUtil.IsCellDateFormatted(r.GetCell(0)));
+            Assert.IsTrue(DateUtil.IsCellDateFormatted(r.GetCell(1)));
 
             // Should Get much bigger now
             s.AutoSizeColumn((short)0);
@@ -760,7 +805,7 @@ namespace TestCases.HSSF.UserModel
             // Save and manually verify that on column C we have now 13, calculated value
             tempFile = TempFile.CreateTempFile("uncalced_succ", ".xls");
             tempFile.Delete();
-            fout = new FileStream(tempFile.FullName,FileMode.OpenOrCreate);
+            fout = new FileStream(tempFile.FullName, FileMode.OpenOrCreate);
             workbook.Write(fout);
             fout.Close();
 
@@ -1025,9 +1070,9 @@ namespace TestCases.HSSF.UserModel
             HSSFWorkbook wb = new HSSFWorkbook();
             HSSFSheet s = (HSSFSheet)wb.CreateSheet();
 
-            Assert.AreEqual(false, s.IsRightToLeft);
+            Assert.IsFalse(s.IsRightToLeft);
             s.IsRightToLeft = true;
-            Assert.AreEqual(true, s.IsRightToLeft);
+            Assert.IsTrue(s.IsRightToLeft);
         }
         [Test]
         public void TestAutoFilter()
@@ -1079,7 +1124,127 @@ namespace TestCases.HSSF.UserModel
             Assert.IsTrue(subRecords[1] is FtCblsSubRecord); // must be present, see Bug 51481
             Assert.IsTrue(subRecords[2] is LbsDataSubRecord);
         }
+        [Test]
+        public void TestGetSetColumnHiddenShort()
+        {
+            IWorkbook workbook = new HSSFWorkbook();
+            ISheet sheet = workbook.CreateSheet("Sheet 1");
+            sheet.SetColumnHidden((short)2, true);
+            Assert.IsTrue(sheet.IsColumnHidden((short)2));
+        }
+        [Test]
+        public void TestColumnWidthShort()
+        {
+            HSSFWorkbook wb = new HSSFWorkbook();
+            ISheet sheet = wb.CreateSheet();
 
+            //default column width measured in characters
+            sheet.DefaultColumnWidth = ((short)10);
+            Assert.AreEqual(10, sheet.DefaultColumnWidth);
+            //columns A-C have default width
+            Assert.AreEqual(256 * 10, sheet.GetColumnWidth((short)0));
+            Assert.AreEqual(256 * 10, sheet.GetColumnWidth((short)1));
+            Assert.AreEqual(256 * 10, sheet.GetColumnWidth((short)2));
+
+            //set custom width for D-F
+            for (char i = 'D'; i <= 'F'; i++)
+            {
+                //Sheet#setColumnWidth accepts the width in units of 1/256th of a character width
+                int w = 256 * 12;
+                sheet.SetColumnWidth((short)i, w);
+                Assert.AreEqual(w, sheet.GetColumnWidth((short)i));
+            }
+            //reset the default column width, columns A-C change, D-F still have custom width
+            sheet.DefaultColumnWidth = ((short)20);
+            Assert.AreEqual(20, sheet.DefaultColumnWidth);
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)0));
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)1));
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)2));
+            for (char i = 'D'; i <= 'F'; i++)
+            {
+                int w = 256 * 12;
+                Assert.AreEqual(w, sheet.GetColumnWidth((short)i));
+            }
+
+            // check for 16-bit signed/unsigned error:
+            sheet.SetColumnWidth((short)10, 40000);
+            Assert.AreEqual(40000, sheet.GetColumnWidth((short)10));
+
+            //The maximum column width for an individual cell is 255 characters
+            try
+            {
+                sheet.SetColumnWidth((short)9, 256 * 256);
+                Assert.Fail("expected exception");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("The maximum column width for an individual cell is 255 characters.", e.Message);
+            }
+
+            //serialize and read again
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+
+            sheet = wb.GetSheetAt(0);
+            Assert.AreEqual(20, sheet.DefaultColumnWidth);
+            //columns A-C have default width
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)0));
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)1));
+            Assert.AreEqual(256 * 20, sheet.GetColumnWidth((short)2));
+            //columns D-F have custom width
+            for (char i = 'D'; i <= 'F'; i++)
+            {
+                short w = (256 * 12);
+                Assert.AreEqual(w, sheet.GetColumnWidth((short)i));
+            }
+            Assert.AreEqual(40000, sheet.GetColumnWidth((short)10));
+        }
+
+        [Test]
+        public void TestShowInPane()
+        {
+            IWorkbook wb = new HSSFWorkbook();
+            ISheet sheet = wb.CreateSheet();
+            sheet.ShowInPane(2, 3);
+
+            try
+            {
+                sheet.ShowInPane(int.MaxValue, 3);
+                Assert.Fail("Should catch exception here");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Maximum row number is 65535", e.Message);
+            }
+        }
+        [Test]
+        public void TestDrawingRecords()
+        {
+            HSSFWorkbook wb = new HSSFWorkbook();
+            HSSFSheet sheet = wb.CreateSheet() as HSSFSheet;
+
+            /* TODO: NPE?
+            sheet.dumpDrawingRecords(false);
+            sheet.dumpDrawingRecords(true);*/
+            Assert.IsNull(sheet.DrawingEscherAggregate);
+        }
+
+        [Test]
+        public void TestBug55723b()
+        {
+            HSSFWorkbook wb = new HSSFWorkbook();
+            ISheet sheet = wb.CreateSheet();
+
+            // stored with a special name
+            Assert.IsNull(wb.Workbook.GetSpecificBuiltinRecord(NameRecord.BUILTIN_FILTER_DB, 1));
+
+            CellRangeAddress range = CellRangeAddress.ValueOf("A:B");
+            IAutoFilter filter = sheet.SetAutoFilter(range);
+            Assert.IsNotNull(filter);
+
+            // stored with a special name
+            NameRecord record = wb.Workbook.GetSpecificBuiltinRecord(NameRecord.BUILTIN_FILTER_DB, 1);
+            Assert.IsNotNull(record);
+        }
 
     }
 }

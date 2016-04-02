@@ -31,11 +31,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             CT_OnOff ctObj = new CT_OnOff();
             if (node.Attributes["w:val"] != null)
             {
-                ctObj.val = XmlHelper.ReadBool(node.Attributes["w:val"]);
+                ctObj.valField = XmlHelper.ReadBool(node.Attributes["w:val"]);
             }
             else
             {
-                ctObj.val = true;
+                ctObj.valField = true;
             }
             return ctObj;
         }
@@ -46,8 +46,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             //if true, don't render val attribute
-            if (!this.val)
-                XmlHelper.WriteAttribute(sw, "w:val", this.val, true);
+            if (!this.valField)
+                XmlHelper.WriteAttribute(sw, "w:val", this.valField, true);
             sw.Write("/>");
         }
 
@@ -91,7 +91,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public bool IsSetVal()
         {
-            return this.valFieldSpecified && !this.valField;
+            return this.valFieldSpecified;
         }
     }
     /// <summary>
@@ -321,8 +321,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         /// <summary>
@@ -530,6 +529,22 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             {
                 this.valField = value;
             }
+        }
+
+        public static CT_MacroName Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        {
+            if (node == null)
+                return null;
+            CT_MacroName ctObj = new CT_MacroName();
+            ctObj.val = XmlHelper.ReadString(node.Attributes["w:val"]);
+            return ctObj;
+        }
+
+        internal void Write(StreamWriter sw, string nodeName)
+        {
+            sw.Write(string.Format("<w:{0}", nodeName));
+            XmlHelper.WriteAttribute(sw, "w:val", this.val, true);
+            sw.Write("/>");
         }
     }
 

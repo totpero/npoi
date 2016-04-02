@@ -118,6 +118,10 @@ namespace TestCases.SS.Format
                 {
                     ICell cell = row.GetCell(2);
                     Debug.WriteLine(string.Format("expectedText: {0}, format:{1}", expectedText, format));
+                    if (format == "hh:mm:ss a/p")
+                        expectedText = expectedText.ToUpper();
+                    else if (format == "H:M:S.00 a/p")
+                        expectedText = expectedText.ToUpper();
                     tryFormat(r, expectedText, format, valueGetter, cell);
                 }
             }

@@ -22,6 +22,7 @@ namespace NPOI.SS.Util
     using NPOI.SS.UserModel;
     using System.Drawing;
     using System.Windows.Forms;
+    using System.Collections.Generic;
 
     /**
      * Helper methods for when working with Usermodel sheets
@@ -61,6 +62,8 @@ namespace NPOI.SS.Util
             public void NotifyUpdateCell(ICell cell) { }
             public CellValue Evaluate(ICell cell) { return null; }
             public ICell EvaluateInCell(ICell cell) { return null; }
+            public bool IgnoreMissingWorkbooks { get; set; }
+            public void SetupReferencedWorkbooks(Dictionary<String, IFormulaEvaluator> workbooks) { }
             public void EvaluateAll() { }
 
             public CellType EvaluateFormulaCell(ICell cell)
@@ -309,7 +312,7 @@ namespace NPOI.SS.Util
             //TextLayout layout;
 
             double width = -1;
-            using (Bitmap bmp = new Bitmap(2048, 100))
+            using (Bitmap bmp = new Bitmap(1,1))
             using (Graphics g = Graphics.FromImage(bmp))
             {
                 if (cellType == CellType.String)
@@ -571,6 +574,10 @@ namespace NPOI.SS.Util
          */
         public static String GetUniqueSheetName(IWorkbook wb, String srcName)
         {
+            if (wb.GetSheetIndex(srcName) == -1)
+            {
+                return srcName;
+            }
             int uniqueIndex = 2;
             String baseName = srcName;
             int bracketPos = srcName.LastIndexOf('(');
@@ -609,5 +616,50 @@ namespace NPOI.SS.Util
                 }
             }
         }
+
+        /**
+         * Return the cell, taking account of merged regions. Allows you to find the
+         *  cell who's contents are Shown in a given position in the sheet.
+         * 
+         * <p>If the cell at the given co-ordinates is a merged cell, this will
+         *  return the primary (top-left) most cell of the merged region.</p>
+         * <p>If the cell at the given co-ordinates is not in a merged region,
+         *  then will return the cell itself.</p>
+         * <p>If there is no cell defined at the given co-ordinates, will return
+         *  null.</p>
+         */
+        public static ICell GetCellWithMerges(ISheet sheet, int rowIx, int colIx)
+        {
+            IRow r = sheet.GetRow(rowIx);
+            if (r != null)
+            {
+                ICell c = r.GetCell(colIx);
+                if (c != null)
+                {
+                    // Normal, non-merged cell
+                    return c;
+                }
+            }
+
+            for (int mr = 0; mr < sheet.NumMergedRegions; mr++)
+            {
+                CellRangeAddress mergedRegion = sheet.GetMergedRegion(mr);
+                if (mergedRegion.IsInRange(rowIx, colIx))
+                {
+                    // The cell wanted is in this merged range
+                    // Return the primary (top-left) cell for the range
+                    r = sheet.GetRow(mergedRegion.FirstRow);
+                    if (r != null)
+                    {
+                        return r.GetCell(mergedRegion.FirstColumn);
+                    }
+                }
+            }
+
+            // If we Get here, then the cell isn't defined, and doesn't
+            //  live within any merged regions
+            return null;
+        }
+
     }
 }

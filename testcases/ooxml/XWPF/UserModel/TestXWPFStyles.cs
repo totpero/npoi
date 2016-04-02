@@ -18,12 +18,6 @@
 namespace NPOI.XWPF.UserModel
 {
     using System;
-
-
-
-
-
-
     using NUnit.Framework;
 
     using NPOI.XWPF;
@@ -67,23 +61,25 @@ namespace NPOI.XWPF.UserModel
             XWPFDocument docOut = new XWPFDocument();
             XWPFStyles styles = docOut.CreateStyles();
 
-            String strStyleName = "headline1";
+            String strStyleId = "headline1";
             CT_Style ctStyle = new CT_Style();
 
-            ctStyle.styleId = (strStyleName);
+            ctStyle.styleId = (strStyleId);
             XWPFStyle s = new XWPFStyle(ctStyle);
             styles.AddStyle(s);
+
+            Assert.IsTrue(styles.StyleExist(strStyleId));
 
             XWPFDocument docIn = XWPFTestDataSamples.WriteOutAndReadBack(docOut);
 
             styles = docIn.GetStyles();
-            Assert.IsTrue(styles.StyleExist(strStyleName));
+            Assert.IsTrue(styles.StyleExist(strStyleId));
         }
 
         /**
-	     * Bug #52449 - We should be able to write a file containing
-	     *  both regular and glossary styles without error
-	     */
+         * Bug #52449 - We should be able to write a file containing
+         *  both regular and glossary styles without error
+         */
         [Test]
         public void Test52449()
         {
@@ -119,7 +115,7 @@ namespace NPOI.XWPF.UserModel
             CT_Style ctStyle = new CT_Style();
             XWPFStyle style = new XWPFStyle(ctStyle);
 
-			style.StyleType = ST_StyleType.paragraph;
+            style.StyleType = ST_StyleType.paragraph;
             Assert.AreEqual(ST_StyleType.paragraph, style.StyleType);
         }
         [Test]
@@ -130,6 +126,88 @@ namespace NPOI.XWPF.UserModel
             ex.name=("ex1");
             XWPFLatentStyles ls = new XWPFLatentStyles(latentStyles);
             Assert.AreEqual(true, ls.IsLatentStyle("ex1"));
+            Assert.AreEqual(false, ls.IsLatentStyle("notex1"));
+        }
+
+        [Test]
+        public void TestSetStyles_Bug57254()
+        {
+            XWPFDocument docOut = new XWPFDocument();
+            XWPFStyles styles = docOut.CreateStyles();
+
+            CT_Styles ctStyles = new CT_Styles();
+            String strStyleId = "headline1";
+            CT_Style ctStyle = ctStyles.AddNewStyle();
+
+            ctStyle.styleId = (/*setter*/strStyleId);
+            styles.SetStyles(ctStyles);
+
+            Assert.IsTrue(styles.StyleExist(strStyleId));
+
+            XWPFDocument docIn = XWPFTestDataSamples.WriteOutAndReadBack(docOut);
+
+            styles = docIn.GetStyles();
+            Assert.IsTrue(styles.StyleExist(strStyleId));
+        }
+
+        [Test]
+        public void TestEasyAccessToStyles()
+        {
+            XWPFDocument doc = XWPFTestDataSamples.OpenSampleDocument("SampleDoc.docx");
+            XWPFStyles styles = doc.GetStyles();
+            Assert.IsNotNull(styles);
+
+            // Has 3 paragraphs on page one, a break, and 3 on page 2
+            Assert.AreEqual(7, doc.Paragraphs.Count);
+
+            // Check the first three have no run styles, just default paragraph style
+            for (int i = 0; i < 3; i++)
+            {
+                XWPFParagraph p = doc.Paragraphs[(i)];
+                Assert.AreEqual(null, p.Style);
+                Assert.AreEqual(null, p.StyleID);
+                Assert.AreEqual(1, p.Runs.Count);
+
+                XWPFRun r = p.Runs[(0)];
+                Assert.AreEqual(null, r.GetColor());
+                Assert.AreEqual(null, r.FontFamily);
+                Assert.AreEqual(null, r.FontName);
+                Assert.AreEqual(-1, r.FontSize);
+            }
+
+            // On page two, has explicit styles, but on Runs not on
+            //  the paragraph itself
+            for (int i = 4; i < 7; i++)
+            {
+                XWPFParagraph p = doc.Paragraphs[(i)];
+                Assert.AreEqual(null, p.Style);
+                Assert.AreEqual(null, p.StyleID);
+                Assert.AreEqual(1, p.Runs.Count);
+
+                XWPFRun r = p.Runs[(0)];
+                Assert.AreEqual("Arial Black", r.FontFamily);
+                Assert.AreEqual("Arial Black", r.FontName);
+                Assert.AreEqual(16, r.FontSize);
+                Assert.AreEqual("548DD4", r.GetColor());
+            }
+
+            // Check the document styles
+            // Should have a style defined for each type
+            Assert.AreEqual(4, styles.NumberOfStyles);
+            Assert.IsNotNull(styles.GetStyle("Normal"));
+            Assert.IsNotNull(styles.GetStyle("DefaultParagraphFont"));
+            Assert.IsNotNull(styles.GetStyle("TableNormal"));
+            Assert.IsNotNull(styles.GetStyle("NoList"));
+
+            // We can't do much yet with latent styles
+            Assert.AreEqual(137, styles.LatentStyles.NumberOfStyles);
+
+            // Check the default styles
+            Assert.IsNotNull(styles.DefaultRunStyle);
+            Assert.IsNotNull(styles.DefaultParagraphStyle);
+
+            Assert.AreEqual(11, styles.DefaultRunStyle.FontSize);
+            Assert.AreEqual(200, styles.DefaultParagraphStyle.SpacingAfter);
 
         }
 

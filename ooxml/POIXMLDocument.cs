@@ -178,7 +178,25 @@ namespace NPOI
             OnDocumentRead();
             context.Clear();
         }
-
+        /**
+         * Closes the underlying {@link OPCPackage} from which this
+         *  document was read, if there is one
+         */
+        public void Close()
+        {
+            if (pkg != null)
+            {
+                if (pkg.GetPackageAccess() == PackageAccess.READ)
+                {
+                    pkg.Revert();
+                }
+                else
+                {
+                    pkg.Close();
+                }
+                pkg = null;
+            }
+        }
         /**
          * Write out this document to an Outputstream.
          *

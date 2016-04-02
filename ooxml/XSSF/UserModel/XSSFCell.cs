@@ -90,6 +90,14 @@ namespace NPOI.XSSF.UserModel
             {
                 _cellNum = new CellReference(cell.r).Col;
             }
+            else
+            {
+                int prevNum = row.LastCellNum;
+                if (prevNum != -1)
+                {
+                    _cellNum = (row as XSSFRow).GetCell(prevNum - 1, MissingCellPolicy.RETURN_NULL_AND_BLANK).ColumnIndex + 1;
+                }
+            }
             _sharedStringSource = ((XSSFWorkbook)row.Sheet.Workbook).GetSharedStringSource();
             _stylesSource = ((XSSFWorkbook)row.Sheet.Workbook).GetStylesSource();
         }
@@ -202,6 +210,8 @@ namespace NPOI.XSSF.UserModel
                     case CellType.Numeric:
                         if (_cell.IsSetV())
                         {
+                            if (string.IsNullOrEmpty(_cell.v))
+                                return 0.0;
                             try
                             {
                                 return Double.Parse(_cell.v, CultureInfo.InvariantCulture);
@@ -248,7 +258,7 @@ namespace NPOI.XSSF.UserModel
             else
             {
                 _cell.t = (ST_CellType.n);
-                _cell.v = (value.ToString());
+                _cell.v = (value.ToString(CultureInfo.InvariantCulture));
             }
         }
 
@@ -371,6 +381,11 @@ namespace NPOI.XSSF.UserModel
             {
                 SetCellType(CellType.Blank);
                 return;
+            }
+
+            if (str.Length > SpreadsheetVersion.EXCEL2007.MaxTextLength)
+            {
+                throw new ArgumentException("The maximum length of cell contents (text) is 32,767 characters");
             }
             CellType cellType = CellType;
             switch (cellType)
@@ -532,7 +547,12 @@ namespace NPOI.XSSF.UserModel
         /// <returns>A1 style reference to the location of this cell</returns>
         public String GetReference()
         {
-            return _cell.r;
+            String ref1 = _cell.r;
+            if (ref1 == null)
+            {
+                return new CellReference(this).FormatAsString();
+            }
+            return ref1;
         }
 
         /// <summary>
@@ -543,7 +563,7 @@ namespace NPOI.XSSF.UserModel
             get
             {
                 XSSFCellStyle style = null;
-                if ((null != _stylesSource) && (_stylesSource.GetNumCellStyles() > 0))
+                if ((null != _stylesSource) && (_stylesSource.NumCellStyles > 0))
                 {
                     long idx = _cell.IsSetS() ? _cell.s : 0;
                     style = _stylesSource.GetStyleAt((int)idx);
@@ -715,7 +735,7 @@ namespace NPOI.XSSF.UserModel
         /// </summary>
         public void SetAsActiveCell()
         {
-            ((XSSFSheet)Sheet).SetActiveCell(_cell.r);
+            ((XSSFSheet)Sheet).SetActiveCell(GetReference());
         }
 
         /// <summary>
@@ -827,7 +847,7 @@ namespace NPOI.XSSF.UserModel
                         FormatBase sdf = new SimpleDateFormat("dd-MMM-yyyy");
                         return sdf.Format(DateCellValue, CultureInfo.CurrentCulture);
                     }
-                    return NumericCellValue + "";
+                    return NumericCellValue.ToString();
                 case CellType.String:
                     return RichStringCellValue.ToString();
                 default:
@@ -926,7 +946,7 @@ namespace NPOI.XSSF.UserModel
             IComment comment = this.CellComment;
             if (comment != null)
             {
-                String ref1 = _cell.r;
+                String ref1 = GetReference();
                 XSSFSheet sh = (XSSFSheet)Sheet;
                 sh.GetCommentsTable(false).RemoveComment(ref1);
                 sh.GetVMLDrawing(false).RemoveCommentShape(RowIndex, ColumnIndex);
@@ -934,7 +954,8 @@ namespace NPOI.XSSF.UserModel
         }
 
         /// <summary>
-        /// Returns hyperlink associated with this cell
+        /// Get or set hyperlink associated with this cell
+        /// If the supplied hyperlink is null on setting, the hyperlink for this cell will be removed.
         /// </summary>
         public IHyperlink Hyperlink
         {
@@ -944,6 +965,11 @@ namespace NPOI.XSSF.UserModel
             }
             set 
             {
+                if (value == null)
+                {
+                    RemoveHyperlink();
+                    return;
+                }
                 XSSFHyperlink link = (XSSFHyperlink)value;
 
                 // Assign to us
@@ -954,6 +980,13 @@ namespace NPOI.XSSF.UserModel
             }
         }
 
+        /**
+         * Removes the hyperlink for this cell, if there is one.
+         */
+        public void RemoveHyperlink()
+        {
+            ((XSSFSheet)Sheet).RemoveHyperlink(_row.RowNum, _cellNum);
+        }
         /**
          * Returns the xml bean containing information about the cell's location (reference), value,
          * data type, formatting, and formula
@@ -1055,7 +1088,7 @@ namespace NPOI.XSSF.UserModel
                 XSSFCell cell = ((XSSFSheet)Sheet).GetFirstCellInArrayFormula(this);
                 if (cell == null)
                 {
-                    throw new InvalidOperationException("Cell " + _cell.r
+                    throw new InvalidOperationException("Cell " + GetReference()
                             + " is not part of an array formula.");
                 }
                 String formulaRef = cell._cell.f.@ref;
@@ -1108,7 +1141,7 @@ namespace NPOI.XSSF.UserModel
         public bool IsMergedCell
         {
             get {
-                return this.Sheet.IsMergedRegion(new CellRangeAddress(this.RowIndex,this.ColumnIndex,this.RowIndex,this.ColumnIndex));
+                return this.Sheet.IsMergedRegion(new CellRangeAddress(this.RowIndex, this.RowIndex, this.ColumnIndex, this.ColumnIndex));
             }
             
         }

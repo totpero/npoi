@@ -36,6 +36,7 @@ using NPOI.POIFS.Dev;
 using NPOI.POIFS.FileSystem;
 using NPOI.POIFS.EventFileSystem;
 using NPOI.Util;
+using NPOI.Util.Collections;
 
 namespace NPOI.POIFS.FileSystem
 {
@@ -210,7 +211,14 @@ namespace NPOI.POIFS.FileSystem
                 }
                 else
                 {
-                    _nFilesSystem.Remove(entry);
+                    try
+                    {
+                        _nFilesSystem.Remove(entry);
+                    }
+                    catch (IOException)
+                    {
+                        // TODO Work out how to report this, given we can't change the method signature...
+                    }
                 }
             }
             return rval;
@@ -254,6 +262,24 @@ namespace NPOI.POIFS.FileSystem
         {
             return _entries[index];
         }
+
+        /**
+         * get the names of all the Entries contained directly in this
+         * instance (in other words, names of children only; no grandchildren
+         * etc).
+         *
+         * @return the names of all the entries that may be retrieved with
+         *         getEntry(String), which may be empty (if this 
+         *         DirectoryEntry is empty)
+         */
+        public List<String> EntryNames
+        {
+            get
+            {
+                return new List<string>(_byname.Keys);
+            }
+        }
+
         /// <summary>
         /// is this DirectoryEntry empty?
         /// </summary>
@@ -472,8 +498,14 @@ namespace NPOI.POIFS.FileSystem
 
         public DocumentEntry CreateDocument(string name, int size, POIFSWriterListener writer)
         {
-           // return CreateDocument(name, size, write);
-            return CreateDocument(new POIFSDocument(name, size, _path, writer));
+            if (_nFilesSystem != null)
+            {
+                return CreateDocument(new NPOIFSDocument(name, size, _nFilesSystem, writer));
+            }
+            else
+            {
+                return CreateDocument(new POIFSDocument(name, size, _path, writer));
+            }
         }
 
 
@@ -485,7 +517,7 @@ namespace NPOI.POIFS.FileSystem
         public Array ViewableArray
         {
             get
-			{
+            {
                 return new Object[0];
             }
         }

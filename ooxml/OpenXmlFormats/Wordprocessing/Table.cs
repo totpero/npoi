@@ -665,12 +665,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         }
         #endregion
 
-		public CT_TblGrid AddNewTblGrid()
-		{
-			this.tblGrid = new CT_TblGrid();
-			return this.tblGrid;
-		}
-	}
+        public CT_TblGrid AddNewTblGrid()
+        {
+            this.tblGrid = new CT_TblGrid();
+            return this.tblGrid;
+        }
+    }
 
 
     [Serializable]
@@ -738,7 +738,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             //this.tblGridField = new List<CT_TblGridCol>();
         }
-        public static CT_TblGridChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TblGridChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -755,7 +755,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "r:id", this.id);
@@ -810,8 +810,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:w", this.w);
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -826,24 +825,14 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.wField = value;
             }
         }
-
-        [XmlIgnore]
         public bool wSpecified
         {
-            get
-            {
-                return this.wFieldSpecified;
-            }
-            set
-            {
-                this.wFieldSpecified = value;
-            }
+            get { return this.wFieldSpecified; }
+            set { this.wFieldSpecified = value; }
         }
     }
     [XmlInclude(typeof(CT_TblGrid))]
-
     [Serializable]
-
     [XmlType(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main")]
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_TblGridBase
@@ -931,16 +920,16 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
         }
 
-		public CT_TblGridCol AddNewGridCol()
-		{
-			if (this.gridCol == null)
-				gridCol = new List<CT_TblGridCol>();
+        public CT_TblGridCol AddNewGridCol()
+        {
+            if (this.gridCol == null)
+                gridCol = new List<CT_TblGridCol>();
 
-			CT_TblGridCol col=new CT_TblGridCol();
-			gridCol.Add(col);
-			return col;
-		}
-	}
+            CT_TblGridCol col=new CT_TblGridCol();
+            gridCol.Add(col);
+            return col;
+        }
+    }
 
     [Serializable]
 
@@ -1097,7 +1086,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_TblPrChange : CT_TrackChange
     {
-        public static CT_TblPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TblPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -1115,7 +1104,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
@@ -1605,9 +1594,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             XmlHelper.WriteAttribute(sw, "w:bottomFromText", this.bottomFromText);
             XmlHelper.WriteAttribute(sw, "w:vertAnchor", this.vertAnchor.ToString());
             XmlHelper.WriteAttribute(sw, "w:horzAnchor", this.horzAnchor.ToString());
-            XmlHelper.WriteAttribute(sw, "w:tblpXSpec", this.tblpXSpec.ToString());
+            if (this.tblpXSpecFieldSpecified)
+                XmlHelper.WriteAttribute(sw, "w:tblpXSpec", this.tblpXSpec.ToString());
             XmlHelper.WriteAttribute(sw, "w:tblpX", this.tblpX);
-            XmlHelper.WriteAttribute(sw, "w:tblpYSpec", this.tblpYSpec.ToString());
+            if (this.tblpYSpecFieldSpecified)
+                XmlHelper.WriteAttribute(sw, "w:tblpYSpec", this.tblpYSpec.ToString());
             XmlHelper.WriteAttribute(sw, "w:tblpY", this.tblpY);
             sw.Write(">");
             sw.Write(string.Format("</w:{0}>", nodeName));
@@ -1778,6 +1769,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             set
             {
+                this.tblpXSpecFieldSpecified = true;
                 this.tblpXSpecField = value;
             }
         }
@@ -1817,6 +1809,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             set
             {
+                this.tblpYSpecFieldSpecified = true;
                 this.tblpYSpecField = value;
             }
         }
@@ -1859,7 +1852,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         private ulong valField;
 
 
-        private ST_HeightRule hRuleField;
+        private ST_HeightRule hRuleField= ST_HeightRule.auto;
 
         public static CT_Height Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
@@ -1878,9 +1871,9 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:val", this.val);
-            XmlHelper.WriteAttribute(sw, "w:hRule", this.hRule.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            if(this.hRule!= ST_HeightRule.auto)
+                XmlHelper.WriteAttribute(sw, "w:hRule", this.hRule.ToString());
+            sw.Write("/>");
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -1966,7 +1959,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             
         }
-        public static CT_TblPrExChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TblPrExChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -1984,7 +1977,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
@@ -2232,7 +2225,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     {
 
         private CT_TblPrExChange tblPrExChangeField;
-        public static CT_TblPrEx Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TblPrEx Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -2265,7 +2258,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
@@ -2751,7 +2744,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     {
 
         private CT_TblPrChange tblPrChangeField;
-        public static CT_TblPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TblPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -2796,7 +2789,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
@@ -2853,12 +2846,12 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
         }
 
-		public CT_TblLayoutType AddNewTblLayout()
-		{
-			this.tblLayout = new CT_TblLayoutType();
-			return this.tblLayout;
-		}
-	}
+        public CT_TblLayoutType AddNewTblLayout()
+        {
+            this.tblLayout = new CT_TblLayoutType();
+            return this.tblLayout;
+        }
+    }
 
 
     [Serializable]
@@ -2874,7 +2867,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             
         }
-        public static CT_TrPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TrPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -2892,7 +2885,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
@@ -3011,31 +3004,44 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
-            foreach (object o in this.Items)
+            for (int i = 0; i < this.Items.Count; i++)
             {
-                if (o is CT_DecimalNumber)
+                object o = this.Items[i];
+                if (o is CT_DecimalNumber
+                    && this.ItemsElementName[i] == ItemsChoiceType2.gridBefore)
                     ((CT_DecimalNumber)o).Write(sw, "gridBefore");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.cantSplit)
                     ((CT_OnOff)o).Write(sw, "cantSplit");
-                else if (o is CT_Cnf)
+                else if (o is CT_Cnf
+                    && this.ItemsElementName[i] == ItemsChoiceType2.cnfStyle)
                     ((CT_Cnf)o).Write(sw, "cnfStyle");
-                else if (o is CT_DecimalNumber)
+                else if (o is CT_DecimalNumber
+                    && this.ItemsElementName[i] == ItemsChoiceType2.divId)
                     ((CT_DecimalNumber)o).Write(sw, "divId");
-                else if (o is CT_DecimalNumber)
+                else if (o is CT_DecimalNumber
+                    && this.ItemsElementName[i] == ItemsChoiceType2.gridAfter)
                     ((CT_DecimalNumber)o).Write(sw, "gridAfter");
-                else if (o is CT_Height)
+                else if (o is CT_Height
+                    && this.ItemsElementName[i] == ItemsChoiceType2.trHeight)
                     ((CT_Height)o).Write(sw, "trHeight");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.hidden)
                     ((CT_OnOff)o).Write(sw, "hidden");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.tblCellSpacing)
                     ((CT_TblWidth)o).Write(sw, "tblCellSpacing");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.tblHeader)
                     ((CT_OnOff)o).Write(sw, "tblHeader");
-                else if (o is CT_Jc)
+                else if (o is CT_Jc
+                    && this.ItemsElementName[i] == ItemsChoiceType2.jc)
                     ((CT_Jc)o).Write(sw, "jc");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.wAfter)
                     ((CT_TblWidth)o).Write(sw, "wAfter");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.wBefore)
                     ((CT_TblWidth)o).Write(sw, "wBefore");
             }
             sw.Write(string.Format("</w:{0}>", nodeName));
@@ -3832,7 +3838,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             //this.delField = new CT_TrackChange();
             //this.insField = new CT_TrackChange();
         }
-        public static CT_TrPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TrPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -3911,7 +3917,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
@@ -3921,31 +3927,44 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
                 this.del.Write(sw, "del");
             if (this.trPrChange != null)
                 this.trPrChange.Write(sw, "trPrChange");
-            foreach (object o in this.Items)
+            for (int i=0;i<this.Items.Count;i++)
             {
-                if (o is CT_DecimalNumber)
+                object o = this.Items[i];
+                if (o is CT_DecimalNumber 
+                    &&this.ItemsElementName[i]== ItemsChoiceType2.gridBefore)
                     ((CT_DecimalNumber)o).Write(sw, "gridBefore");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.cantSplit)
                     ((CT_OnOff)o).Write(sw, "cantSplit");
-                else if (o is CT_Cnf)
+                else if (o is CT_Cnf
+                    && this.ItemsElementName[i] == ItemsChoiceType2.cnfStyle)
                     ((CT_Cnf)o).Write(sw, "cnfStyle");
-                else if (o is CT_DecimalNumber)
+                else if (o is CT_DecimalNumber
+                    && this.ItemsElementName[i] == ItemsChoiceType2.divId)
                     ((CT_DecimalNumber)o).Write(sw, "divId");
-                else if (o is CT_DecimalNumber)
+                else if (o is CT_DecimalNumber
+                    && this.ItemsElementName[i] == ItemsChoiceType2.gridAfter)
                     ((CT_DecimalNumber)o).Write(sw, "gridAfter");
-                else if (o is CT_Height)
+                else if (o is CT_Height
+                    && this.ItemsElementName[i] == ItemsChoiceType2.trHeight)
                     ((CT_Height)o).Write(sw, "trHeight");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.hidden)
                     ((CT_OnOff)o).Write(sw, "hidden");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.tblCellSpacing)
                     ((CT_TblWidth)o).Write(sw, "tblCellSpacing");
-                else if (o is CT_OnOff)
+                else if (o is CT_OnOff
+                    && this.ItemsElementName[i] == ItemsChoiceType2.tblHeader)
                     ((CT_OnOff)o).Write(sw, "tblHeader");
-                else if (o is CT_Jc)
+                else if (o is CT_Jc
+                    && this.ItemsElementName[i] == ItemsChoiceType2.jc)
                     ((CT_Jc)o).Write(sw, "jc");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.wAfter)
                     ((CT_TblWidth)o).Write(sw, "wAfter");
-                else if (o is CT_TblWidth)
+                else if (o is CT_TblWidth
+                    && this.ItemsElementName[i] == ItemsChoiceType2.wBefore)
                     ((CT_TblWidth)o).Write(sw, "wBefore");
             }
             sw.Write(string.Format("</w:{0}>", nodeName));
@@ -3998,7 +4017,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_TcPrChange : CT_TrackChange
     {
-        public static CT_TcPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TcPrChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -4016,7 +4035,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:author", this.author);
@@ -4207,7 +4226,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         private ST_AnnotationVMerge vMergeOrigField;
 
         private bool vMergeOrigFieldSpecified;
-        public static CT_CellMergeTrackChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_CellMergeTrackChange Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -4224,7 +4243,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
 
 
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "w:vMerge", this.vMerge.ToString());
@@ -4609,7 +4628,7 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     {
 
         private CT_TcPrChange tcPrChangeField;
-        public static CT_TcPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
+        public static new CT_TcPr Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
             if (node == null)
                 return null;
@@ -4654,9 +4673,13 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             return ctObj;
         }
 
+        public CT_TblWidth AddNewTcW()
+        {
+            this.tcW = new CT_TblWidth();
+            return this.tcW;
+        }
 
-
-        internal void Write(StreamWriter sw, string nodeName)
+        internal new void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
             sw.Write(">");
@@ -4755,19 +4778,6 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
 
         public CT_TcPrBase()
         {
-            this.hideMarkField = new CT_OnOff();
-            this.vAlignField = new CT_VerticalJc();
-            this.tcFitTextField = new CT_OnOff();
-            this.textDirectionField = new CT_TextDirection();
-            this.tcMarField = new CT_TcMar();
-            this.noWrapField = new CT_OnOff();
-            this.shdField = new CT_Shd();
-            this.tcBordersField = new CT_TcBorders();
-            this.vMergeField = new CT_VMerge();
-            this.hMergeField = new CT_HMerge();
-            this.gridSpanField = new CT_DecimalNumber();
-            this.tcWField = new CT_TblWidth();
-            this.cnfStyleField = new CT_Cnf();
         }
 
         [XmlElement(Order = 0)]
@@ -4973,6 +4983,11 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             this.hMerge = new CT_HMerge();
             return this.hMerge;
         }
+        public CT_DecimalNumber AddNewGridspan()
+        {
+            this.gridSpanField = new CT_DecimalNumber();
+            return this.gridSpanField;
+        }
     }
 
     [Serializable]
@@ -5052,7 +5067,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
     [XmlRoot(Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", IsNullable = true)]
     public class CT_VMerge
     {
-
+        public CT_VMerge()
+        {
+            this.valField = ST_Merge.@continue;
+        }
         private ST_Merge valField;
 
         private bool valFieldSpecified;
@@ -5071,9 +5089,9 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<w:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</w:{0}>", nodeName));
+            if(valField != ST_Merge.@continue)
+                XmlHelper.WriteAttribute(sw, "w:val", this.val.ToString());
+            sw.Write("/>");
         }
 
         [XmlAttribute(Form = System.Xml.Schema.XmlSchemaForm.Qualified)]
@@ -5218,6 +5236,8 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
         public CT_Columns()
         {
             //this.colField = new List<CT_Column>();
+            this.equalWidthField = ST_OnOff.off;
+            this.sepField = ST_OnOff.off;
         }
         public static CT_Columns Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
@@ -5638,7 +5658,10 @@ namespace NPOI.OpenXmlFormats.Wordprocessing
             }
             sw.Write(string.Format("</w:{0}>", nodeName));
         }
-
+        public void RemoveTc(int pos)
+        {
+            RemoveObject(ItemsChoiceTableRowType.tc, pos);
+        }
         [XmlElement(Order = 0)]
         public CT_TblPrEx tblPrEx
         {

@@ -488,8 +488,9 @@ namespace NPOI.OpenXmlFormats.Dml
         public CT_TextBodyProperties()
         {
             this.uprightField = false;
-            this.vert = ST_TextVerticalType.horz;
-            this.wrap = ST_TextWrappingType.none;
+            this.vertField = ST_TextVerticalType.horz;
+            this.wrapField = ST_TextWrappingType.none;
+            this.spcFirstLastParaField = false;
         }
         public static CT_TextBodyProperties Parse(XmlNode node, XmlNamespaceManager namespaceManager)
         {
@@ -547,11 +548,13 @@ namespace NPOI.OpenXmlFormats.Dml
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<a:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "rot", this.rot);
-            XmlHelper.WriteAttribute(sw, "spcFirstLastPara", this.spcFirstLastPara);
+            XmlHelper.WriteAttribute(sw, "rot", this.rot,true);
+            if(spcFirstLastPara)
+                XmlHelper.WriteAttribute(sw, "spcFirstLastPara", this.spcFirstLastPara);
             XmlHelper.WriteAttribute(sw, "vertOverflow", this.vertOverflow.ToString());
-            XmlHelper.WriteAttribute(sw, "horzOverflow", this.horzOverflow.ToString());
-            if(this.vert!= ST_TextVerticalType.horz)
+            if(this.horzOverflow!= ST_TextHorzOverflowType.overflow)
+                XmlHelper.WriteAttribute(sw, "horzOverflow", this.horzOverflow.ToString());
+            if(this.vert!= ST_TextVerticalType.vert)
                 XmlHelper.WriteAttribute(sw, "vert", this.vert.ToString());
             if(this.wrap!= ST_TextWrappingType.none)
                 XmlHelper.WriteAttribute(sw, "wrap", this.wrap.ToString());
@@ -566,8 +569,10 @@ namespace NPOI.OpenXmlFormats.Dml
             XmlHelper.WriteAttribute(sw, "anchor", this.anchor.ToString());
             XmlHelper.WriteAttribute(sw, "anchorCtr", this.anchorCtr, false);
             XmlHelper.WriteAttribute(sw, "forceAA", this.forceAA, false);
-            XmlHelper.WriteAttribute(sw, "upright", this.upright);
-            XmlHelper.WriteAttribute(sw, "compatLnSpc", this.compatLnSpc);
+            if(upright)
+                XmlHelper.WriteAttribute(sw, "upright", this.upright);
+            if (compatLnSpc)
+                XmlHelper.WriteAttribute(sw, "compatLnSpc", this.compatLnSpc);
             sw.Write(">");
             if (this.prstTxWarp != null)
                 this.prstTxWarp.Write(sw, "prstTxWarp");
@@ -698,6 +703,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.rotField = value;
+                this.rotFieldSpecified = true;
             }
         }
 
@@ -726,6 +732,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.spcFirstLastParaField = value;
+                this.spcFirstLastParaFieldSpecified = value;
             }
         }
 
@@ -754,6 +761,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.vertOverflowField = value;
+                this.vertOverflowFieldSpecified = true;
             }
         }
 
@@ -782,6 +790,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.horzOverflowField = value;
+                this.horzOverflowFieldSpecified = true;
             }
         }
 
@@ -810,6 +819,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.vertField = value;
+                this.vertFieldSpecified = true;
             }
         }
 
@@ -838,6 +848,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.wrapField = value;
+                this.wrapFieldSpecified = true;
             }
         }
 
@@ -866,6 +877,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.lInsField = value;
+                this.lInsFieldSpecified = true;
             }
         }
 
@@ -894,6 +906,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.tInsField = value;
+                this.tInsFieldSpecified = true;
             }
         }
 
@@ -922,6 +935,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.rInsField = value;
+                this.rInsFieldSpecified = true;
             }
         }
 
@@ -950,6 +964,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.bInsField = value;
+                this.bInsFieldSpecified = true;
             }
         }
 
@@ -978,6 +993,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.numColField = value;
+                this.numColFieldSpecified = true;
             }
         }
 
@@ -1006,6 +1022,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.spcColField = value;
+                this.spcColFieldSpecified = true;
             }
         }
 
@@ -1034,6 +1051,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.rtlColField = value;
+                this.rtlColFieldSpecified = value;
             }
         }
 
@@ -1062,6 +1080,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.fromWordArtField = value;
+                this.fromWordArtFieldSpecified = value;
             }
         }
 
@@ -1090,6 +1109,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.anchorField = value;
+                this.anchorFieldSpecified = true;
             }
         }
 
@@ -1118,6 +1138,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.anchorCtrField = value;
+                this.anchorCtrFieldSpecified = value;
             }
         }
 
@@ -1146,6 +1167,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.forceAAField = value;
+                this.forceAAFieldSpecified = value;
             }
         }
 
@@ -1189,6 +1211,7 @@ namespace NPOI.OpenXmlFormats.Dml
             set
             {
                 this.compatLnSpcField = value;
+                this.compatLnSpcFieldSpecified = value;
             }
         }
 
@@ -1204,6 +1227,144 @@ namespace NPOI.OpenXmlFormats.Dml
             {
                 this.compatLnSpcFieldSpecified = value;
             }
+        }
+
+        public void UnsetTIns()
+        {
+            this.tInsFieldSpecified = false;
+        }
+
+        public void UnsetVertOverflow()
+        {
+            this.vertOverflowFieldSpecified = false;
+        }
+
+        public void UnsetVert()
+        {
+            this.vertFieldSpecified = false;
+        }
+
+        public bool IsSetVert()
+        {
+            return this.vertFieldSpecified;
+        }
+
+        public bool IsSetBIns()
+        {
+            return this.bInsFieldSpecified;
+        }
+
+        public bool IsSetLIns()
+        {
+            return this.lInsFieldSpecified;
+        }
+
+        public bool IsSetRIns()
+        {
+            return this.rInsFieldSpecified;
+        }
+
+        public bool IsSetTIns()
+        {
+            return this.tInsFieldSpecified;
+        }
+
+        public void UnsetBIns()
+        {
+            this.bInsFieldSpecified = false;
+        }
+
+        public void UnsetLIns()
+        {
+            this.lInsFieldSpecified = false;
+        }
+
+        public void UnsetRIns()
+        {
+            this.rInsFieldSpecified = false;
+        }
+
+        public bool IsSetSpAutoFit()
+        {
+            return this.spAutoFitField != null;
+        }
+
+        public bool IsSetNoAutofit()
+        {
+            return this.noAutofitField != null;
+        }
+
+        public bool IsSetNormAutofit()
+        {
+            return this.normAutofitField != null;
+        }
+
+        public void UnsetSpAutoFit()
+        {
+            this.spAutoFitField = null;
+        }
+
+        public void UnsetNoAutofit()
+        {
+            this.noAutofitField = null;
+        }
+
+        public void UnsetNormAutofit()
+        {
+            this.normAutofitField = null;
+        }
+
+        public CT_TextNoAutofit AddNewNoAutofit()
+        {
+            this.noAutofitField = new CT_TextNoAutofit();
+            return this.noAutofitField;
+        }
+
+        public CT_TextNormalAutofit AddNewNormAutofit()
+        {
+            this.normAutofitField = new CT_TextNormalAutofit();
+            return this.normAutofitField;
+        }
+
+        public CT_TextShapeAutofit AddNewSpAutoFit()
+        {
+            this.spAutoFitField = new CT_TextShapeAutofit();
+            return this.spAutoFitField;
+        }
+
+        public void UnsetHorzOverflow()
+        {
+            this.horzOverflowFieldSpecified = false;
+        }
+
+        public bool IsSetHorzOverflow()
+        {
+            return this.horzOverflowFieldSpecified;
+        }
+
+
+        public bool IsSetVertOverflow()
+        {
+            return this.vertOverflowFieldSpecified;
+        }
+
+        public bool IsSetAnchor()
+        {
+            return this.anchorFieldSpecified;
+        }
+
+        public void UnsetAnchor()
+        {
+            this.anchorFieldSpecified = false;
+        }
+
+        public bool IsSetWrap()
+        {
+            return this.wrapFieldSpecified;
+        }
+        public void UnsetWrap()
+        {
+            this.wrapFieldSpecified = false;
         }
     }
     

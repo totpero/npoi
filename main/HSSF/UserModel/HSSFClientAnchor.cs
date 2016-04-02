@@ -47,6 +47,10 @@ namespace NPOI.HSSF.UserModel
         /// <summary>
         /// Creates a new client anchor and Sets the top-left and bottom-right
         /// coordinates of the anchor.
+        /// 
+        /// Note: Microsoft Excel seems to sometimes disallow 
+        /// higher y1 than y2 or higher x1 than x2 in the anchor, you might need to 
+        /// reverse them and draw shapes vertically or horizontally flipped! 
         /// </summary>
         /// <param name="dx1">the x coordinate within the first cell.</param>
         /// <param name="dy1">the y coordinate within the first cell.</param>
@@ -189,6 +193,10 @@ namespace NPOI.HSSF.UserModel
         /// <summary>
         /// Sets the top-left and bottom-right
         /// coordinates of the anchor
+        /// 
+        /// Note: Microsoft Excel seems to sometimes disallow 
+        /// higher y1 than y2 or higher x1 than x2 in the anchor, you might need to 
+        /// reverse them and draw shapes vertically or horizontally flipped! 
         /// </summary>
         /// <param name="col1">the column (0 based) of the first cell.</param>
         /// <param name="row1"> the row (0 based) of the first cell.</param>
@@ -252,9 +260,9 @@ namespace NPOI.HSSF.UserModel
         /// 0 = Move and size with Cells, 2 = Move but don't size with cells, 3 = Don't move or size with cells.
         /// </summary>
         /// <value>The type of the anchor.</value>
-        public int AnchorType
+        public AnchorType AnchorType
         {
-            get { return _escherClientAnchor.Flag; }
+            get { return (AnchorType)_escherClientAnchor.Flag; }
             set { this._escherClientAnchor.Flag = (short)value; }
         }
 
@@ -269,7 +277,7 @@ namespace NPOI.HSSF.UserModel
         private void CheckRange(int value, int minRange, int maxRange, String varName)
         {
             if (value < minRange || value > maxRange)
-                throw new ArgumentException(varName + " must be between " + minRange + " and " + maxRange);
+                throw new ArgumentOutOfRangeException(varName + " must be between " + minRange + " and " + maxRange + ", but was: " + value);
         }
         internal override EscherRecord GetEscherAnchor()
         {
@@ -295,7 +303,12 @@ namespace NPOI.HSSF.UserModel
                     && anchor.Dx2 == Dx2 && anchor.Dy1 == Dy1 && anchor.Dy2 == Dy2
                     && anchor.Row1 == Row1 && anchor.Row2 == Row2 && anchor.AnchorType == AnchorType;
         }
-
+        public override int GetHashCode()
+        {
+            return Col1.GetHashCode() ^ Col2.GetHashCode() ^ Dx1.GetHashCode()
+                   ^ Dx2.GetHashCode() ^ Dy1.GetHashCode() ^ Dy2.GetHashCode()
+                    ^Row1.GetHashCode() ^  Row2.GetHashCode() ^ AnchorType.GetHashCode();
+        }
         public override int Dx1
         {
             get

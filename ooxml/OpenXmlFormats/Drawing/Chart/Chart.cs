@@ -383,9 +383,8 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<c:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "val", this.val);
-            sw.Write(">");
-            sw.Write(string.Format("</c:{0}>", nodeName));
+            XmlHelper.WriteAttribute(sw, "val", this.val,true);
+            sw.Write("/>");
         }
 
     }
@@ -863,9 +862,12 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
         internal void Write(StreamWriter sw, string nodeName)
         {
             sw.Write(string.Format("<c:{0}", nodeName));
-            XmlHelper.WriteAttribute(sw, "alignWithMargins", this.alignWithMargins, true);
-            XmlHelper.WriteAttribute(sw, "differentOddEven", this.differentOddEven);
-            XmlHelper.WriteAttribute(sw, "differentFirst", this.differentFirst);
+            if(!this.alignWithMargins)
+                XmlHelper.WriteAttribute(sw, "alignWithMargins", this.alignWithMargins, true);
+            if(this.differentOddEven)
+                XmlHelper.WriteAttribute(sw, "differentOddEven", this.differentOddEven);
+            if(this.differentFirst)
+                XmlHelper.WriteAttribute(sw, "differentFirst", this.differentFirst);
             sw.Write(">");
             if (this.oddHeader != null)
                 sw.Write(string.Format("<oddHeader>{0}</oddHeader>", this.oddHeader));
@@ -1231,8 +1233,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
         {
             sw.Write(string.Format("<c:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</c:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute]
@@ -1757,6 +1758,17 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             {
                 this.extLstField = value;
             }
+        }
+
+        public bool IsSetOverlay()
+        {
+            return this.overlayField != null && this.overlayField.val > 0;
+        }
+
+        public void AddNewOverlay()
+        {
+            this.overlayField = new CT_Boolean();
+            //return this.overlayField;
         }
     }
 
@@ -3833,8 +3845,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             sw.Write(string.Format("<c:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "formatCode", this.formatCode);
             XmlHelper.WriteAttribute(sw, "sourceLinked", this.sourceLinked, false);
-            sw.Write(">");
-            sw.Write(string.Format("</c:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute]
@@ -3895,8 +3906,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
         {
             sw.Write(string.Format("<c:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</c:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute]
@@ -3964,8 +3974,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
         {
             sw.Write(string.Format("<c:{0}", nodeName));
             XmlHelper.WriteAttribute(sw, "val", this.val.ToString());
-            sw.Write(">");
-            sw.Write(string.Format("</c:{0}>", nodeName));
+            sw.Write("/>");
         }
 
         [XmlAttribute]
@@ -4841,7 +4850,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
 
         private CT_UnsignedInt crossAxField;
 
-        private object itemField;
+        //private object itemField;
 
         private CT_Boolean autoField;
 
@@ -5266,6 +5275,71 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                 this.extLstField = value;
             }
         }
+
+        public CT_NumFmt AddNewNumFmt()
+        {
+            this.numFmtField = new CT_NumFmt();
+            return numFmtField;
+        }
+
+        public bool IsSetNumFmt()
+        {
+            return this.numFmtField != null;
+        }
+
+        public CT_UnsignedInt AddNewAxId()
+        {
+            this.axIdField = new CT_UnsignedInt();
+            return this.axIdField;
+        }
+
+        public CT_AxPos AddNewAxPos()
+        {
+            this.axPosField = new CT_AxPos();
+            return this.axPosField;
+        }
+
+        public CT_Scaling AddNewScaling()
+        {
+            this.scalingField = new CT_Scaling();
+            return this.scalingField;
+        }
+
+        public CT_Crosses AddNewCrosses()
+        {
+            this.crossesField = new CT_Crosses();
+            return this.crossesField;
+        }
+
+        public CT_UnsignedInt AddNewCrossAx()
+        {
+            this.crossAxField = new CT_UnsignedInt();
+            return this.crossAxField;
+        }
+
+        public CT_TickLblPos AddNewTickLblPos()
+        {
+            this.tickLblPosField = new CT_TickLblPos();
+            return this.tickLblPosField;
+        }
+
+        public CT_Boolean AddNewDelete()
+        {
+            this.deleteField = new CT_Boolean();
+            return this.deleteField;
+        }
+
+        public CT_TickMark AddNewMajorTickMark()
+        {
+            this.majorTickMarkField = new CT_TickMark();
+            return this.majorTickMarkField;
+        }
+
+        public CT_TickMark AddNewMinorTickMark()
+        {
+            this.minorTickMarkField = new CT_TickMark();
+            return this.minorTickMarkField;
+        }
     }
 
 
@@ -5452,7 +5526,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
     public class CT_DispUnits
     {
 
-        private object itemField;
+        //private object itemField;
 
         private CT_DispUnitsLbl dispUnitsLblField;
 
@@ -6051,6 +6125,24 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                 this.extLstField = value;
             }
         }
+
+        public CT_Boolean AddNewDelete()
+        {
+            this.deleteField = new CT_Boolean();
+            return this.deleteField;
+        }
+
+        public CT_TickMark AddNewMajorTickMark()
+        {
+            this.majorTickMarkField = new CT_TickMark();
+            return this.majorTickMarkField;
+        }
+
+        public CT_TickMark AddNewMinorTickMark()
+        {
+            this.minorTickMarkField = new CT_TickMark();
+            return this.minorTickMarkField;
+        }
     }
 
 
@@ -6104,6 +6196,12 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             sw.Write(string.Format("</c:{0}>", nodeName));
         }
 
+
+        public CT_StrRef AddNewStrRef()
+        {
+            this.strRefField = new CT_StrRef();
+            return this.strRefField;
+        }
     }
 
 
@@ -6419,6 +6517,12 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             {
                 this.extLstField = value;
             }
+        }
+
+        public CT_MarkerStyle AddNewSymbol()
+        {
+            this.symbolField = new CT_MarkerStyle();
+            return this.symbolField;
         }
     }
 
@@ -6877,16 +6981,18 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                 this.spPr.Write(sw, "spPr");
             if (this.txPr != null)
                 this.txPr.Write(sw, "txPr");
-            if (this.showBubbleSize != null)
-                this.showBubbleSize.Write(sw, "showBubbleSize");
-            if (this.showCatName != null)
-                this.showCatName.Write(sw, "showCatName");
             if (this.showLegendKey != null)
                 this.showLegendKey.Write(sw, "showLegendKey");
-            if (this.showPercent != null)
-                this.showPercent.Write(sw, "showPercent");
+            if (this.showVal != null)
+                this.showVal.Write(sw, "showVal");
+            if (this.showCatName != null)
+                this.showCatName.Write(sw, "showCatName");
             if (this.showSerName != null)
                 this.showSerName.Write(sw, "showSerName");
+            if (this.showPercent != null)
+                this.showPercent.Write(sw, "showPercent");
+            if (this.showBubbleSize != null)
+                this.showBubbleSize.Write(sw, "showBubbleSize");
             if (this.delete != null)
                 this.delete.Write(sw, "delete");
             if (this.separator != null)
@@ -6902,8 +7008,6 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             }
             if (this.dLblPos != null)
                 this.dLblPos.Write(sw, "dLblPos");
-            if (this.showVal != null)
-                this.showVal.Write(sw, "showVal");
             if (this.extLst != null)
             {
                 foreach (CT_Extension x in this.extLst)
@@ -9939,8 +10043,6 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                 this.layout.Write(sw, "layout");
             if (this.dTable != null)
                 this.dTable.Write(sw, "dTable");
-            if (this.spPr != null)
-                this.spPr.Write(sw, "spPr");
             if (this.surfaceChart != null)
             {
                 foreach (CT_SurfaceChart x in this.surfaceChart)
@@ -10081,6 +10183,8 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                     x.Write(sw, "valAx");
                 }
             }
+            if (this.spPr != null)
+                this.spPr.Write(sw, "spPr");
             if (this.extLst != null)
             {
                 foreach (CT_Extension x in this.extLst)
@@ -10376,6 +10480,24 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             {
                 this.extLstField = value;
             }
+        }
+
+        public CT_LineChart AddNewLineChart()
+        {
+            CT_LineChart ctchart = new CT_LineChart();
+            if(this.lineChartField==null)
+                this.lineChartField = new List<CT_LineChart>();
+            lineChartField.Add(ctchart);
+            return ctchart;
+        }
+
+        public CT_CatAx AddNewCatAx()
+        {
+            CT_CatAx newax = new CT_CatAx();
+            if(this.catAxField==null)
+                this.catAxField = new List<CT_CatAx>();
+            this.catAxField.Add(newax);
+            return newax;
         }
     }
 
@@ -11786,8 +11908,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
 
         internal void Write(StreamWriter sw, string nodeName)
         {
-            sw.Write(string.Format("<c:{0}", nodeName));
-            sw.Write(">");
+            sw.Write(string.Format("<c:{0}>", nodeName));
             if (this.bodyPr != null)
                 this.bodyPr.Write(sw, "bodyPr");
             if (this.lstStyle != null)
@@ -12219,7 +12340,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
                 XmlHelper.WriteAttribute(sw, "bwMode", this.bwMode.ToString());
             sw.Write(">");
             if (this.xfrm != null)
-                this.xfrm.Write(sw, "xfrm");
+                this.xfrm.Write(sw, "a:xfrm");
             if (this.custGeom != null)
                 this.custGeom.Write(sw, "custGeom");
             if (this.prstGeom != null)
@@ -12231,7 +12352,7 @@ namespace NPOI.OpenXmlFormats.Dml.Chart
             if (this.gradFill != null)
                 this.gradFill.Write(sw, "gradFill");
             if (this.blipFill != null)
-                this.blipFill.Write(sw, "blipFill");
+                this.blipFill.Write(sw, "a:blipFill");
             if (this.pattFill != null)
                 this.pattFill.Write(sw, "pattFill");
             if (this.grpFill != null)

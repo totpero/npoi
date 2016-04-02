@@ -16,6 +16,7 @@
 ==================================================================== */
 
 using NPOI;
+using NPOI.HSSF.Record.Aggregates;
 
 namespace TestCases.HSSF.UserModel
 {
@@ -40,6 +41,7 @@ namespace TestCases.HSSF.UserModel
     using NPOI.SS.Formula.PTG;
     using NPOI.POIFS.FileSystem;
     using NPOI.HSSF.Extractor;
+    using NPOI.HSSF.Record.Crypto;
 
     /**
      * Testcases for bugs entered in bugzilla
@@ -124,22 +126,6 @@ namespace TestCases.HSSF.UserModel
             r.CreateCell(0).CellFormula = ("HYPERLINK( \"http://jakarta.apache.org\", \"Jakarta\" )");
 
             WriteTestOutputFileForViewing(wb, "Test23094");
-        }
-
-        /** Test hyperlinks
-         * Open resulting file in excel, and Check that there is a link to Google
-         */
-        [Test]
-        public void Test15353()
-        {
-            HSSFWorkbook wb = new HSSFWorkbook();
-            ISheet sheet = wb.CreateSheet("My sheet");
-
-            IRow row = sheet.CreateRow(0);
-            ICell cell = row.CreateCell(0);
-            cell.CellFormula = ("HYPERLINK(\"http://google.com\",\"Google\")");
-
-            WriteOutAndReadBack(wb);
         }
 
         /** Test reading of a formula with a name and a cell ref in one
@@ -1977,7 +1963,7 @@ namespace TestCases.HSSF.UserModel
 
             ISheet s = wb.GetSheetAt(0);
             ICell cell1 = s.GetRow(0).GetCell(0);
-            Assert.AreEqual("test ", cell1.StringCellValue.ToString());
+            Assert.AreEqual("test ", cell1.StringCellValue);
 
             ICell cell2 = s.GetRow(0).GetCell(1);
             Assert.AreEqual(1.0, cell2.NumericCellValue);
@@ -2396,7 +2382,11 @@ namespace TestCases.HSSF.UserModel
         [Test]
         public void Test47251()
         {
+            // Firstly, try with one that triggers on InterfaceHdrRecord
             OpenSample("47251.xls");
+
+            // Now with one that triggers on NoteRecord
+            OpenSample("47251_1.xls");
         }
         /**
      * Round trip a file with an unusual UnicodeString/ExtRst record parts
@@ -2722,44 +2712,7 @@ namespace TestCases.HSSF.UserModel
             HSSFWorkbook wb = OpenSample("50939.xls");
             Assert.AreEqual(2, wb.NumberOfSheets);
         }
-        /**
-         * HLookup and VLookup with optional arguments 
-         */
-        [Test]
-        public void Test51024()
-        {
-            HSSFWorkbook wb = new HSSFWorkbook();
-            ISheet s = wb.CreateSheet();
-            IRow r1 = s.CreateRow(0);
-            IRow r2 = s.CreateRow(1);
-
-            r1.CreateCell(0).SetCellValue("v A1");
-            r2.CreateCell(0).SetCellValue("v A2");
-            r1.CreateCell(1).SetCellValue("v B1");
-
-            ICell c = r1.CreateCell(4);
-
-            HSSFFormulaEvaluator eval = new HSSFFormulaEvaluator(wb);
-
-            c.CellFormula = ("VLOOKUP(\"v A1\", A1:B2, 1)");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-
-            c.CellFormula = ("VLOOKUP(\"v A1\", A1:B2, 1, 1)");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-
-            c.CellFormula = ("VLOOKUP(\"v A1\", A1:B2, 1, )");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-
-
-            c.CellFormula = ("HLOOKUP(\"v A1\", A1:B2, 1)");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-
-            c.CellFormula = ("HLOOKUP(\"v A1\", A1:B2, 1, 1)");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-
-            c.CellFormula = ("HLOOKUP(\"v A1\", A1:B2, 1, )");
-            Assert.AreEqual("v A1", eval.Evaluate(c).StringValue);
-        }
+        
         /**
          * File with exactly 256 data blocks (+header block)
          *  shouldn't break on POIFS loading 
@@ -2845,7 +2798,7 @@ namespace TestCases.HSSF.UserModel
                 OpenSample("51832.xls");
                 Assert.Fail("Encrypted file");
             }
-            catch (EncryptedDocumentException e)
+            catch (EncryptedDocumentException)
             {
                 // Good
             }
@@ -2879,6 +2832,57 @@ namespace TestCases.HSSF.UserModel
         {
             HSSFWorkbook wb = OpenSample("51670.xls");
             WriteOutAndReadBack(wb);
+        }
+        /**
+         * Note - part of this test is still failing, see
+         * {@link TestUnfixedBugs#test49612()}
+         */
+        [Test]
+        public void bug49612_part()
+        {
+            HSSFWorkbook wb = HSSFTestDataSamples.OpenSampleWorkbook("49612.xls");
+            HSSFSheet sh = wb.GetSheetAt(0) as HSSFSheet;
+            HSSFRow row = sh.GetRow(0) as HSSFRow;
+            HSSFCell c1 = row.GetCell(2) as HSSFCell;
+            HSSFCell d1 = row.GetCell(3) as HSSFCell;
+            HSSFCell e1 = row.GetCell(2) as HSSFCell;
+
+            Assert.AreEqual("SUM(BOB+JIM)", c1.CellFormula);
+
+            // Problem 1: See TestUnfixedBugs#test49612()
+            // Problem 2: TestUnfixedBugs#test49612()
+
+            // Problem 3: These used to fail, now pass
+            HSSFFormulaEvaluator eval = new HSSFFormulaEvaluator(wb);
+            Assert.AreEqual(30.0, eval.Evaluate(c1).NumberValue, 0.001, "Evaluating c1");
+            Assert.AreEqual(30.0, eval.Evaluate(d1).NumberValue, 0.001, "Evaluating d1");
+            Assert.AreEqual(30.0, eval.Evaluate(e1).NumberValue, 0.001, "Evaluating e1");
+        }
+
+        [Test]
+        public void bug51675()
+        {
+            List<short> list = new List<short>();
+            HSSFWorkbook workbook = OpenSample("51675.xls");
+            HSSFSheet sh = workbook.GetSheetAt(0) as HSSFSheet;
+            InternalSheet ish = HSSFTestHelper.GetSheetForTest(sh);
+            PageSettingsBlock psb = (PageSettingsBlock)ish.Records[(13)];
+            psb.VisitContainedRecords(new RecordVisitor1(list));
+            Assert.IsTrue(list[(list.Count - 1)] == UnknownRecord.BITMAP_00E9);
+            Assert.IsTrue(list[(list.Count - 2)] == UnknownRecord.HEADER_FOOTER_089C);
+        }
+        public class RecordVisitor1 : RecordVisitor
+        {
+            private List<short> list;
+            public RecordVisitor1(List<short> list)
+            {
+                this.list = list;
+            }
+
+            public void VisitRecord(NPOI.HSSF.Record.Record r)
+            {
+                list.Add(r.Sid);
+            }
         }
 
         [Test]
@@ -2956,5 +2960,305 @@ namespace TestCases.HSSF.UserModel
             HSSFWorkbook wb = OpenSample("54016.xls");
             wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
         }
+        [Test]
+        public void TestBug49237()
+        {
+            HSSFWorkbook wb = OpenSample("49237.xls");
+            ISheet sheet = wb.GetSheetAt(0);
+            IRow row = sheet.GetRow(0);
+            ICellStyle rstyle = row.RowStyle;
+            Assert.AreEqual(rstyle.BorderBottom, BorderStyle.Double);
+        }
+        [Test]
+        public void Bug35897()
+        {
+            // password is abc
+            try
+            {
+                Biff8EncryptionKey.CurrentUserPassword = ("abc");
+                OpenSample("xor-encryption-abc.xls");
+            }
+            finally
+            {
+                Biff8EncryptionKey.CurrentUserPassword = (null);
+            }
+
+            // One using the only-recently-documented encryption header type 4,
+            //  and the RC4 CryptoAPI encryption header structure
+            try
+            {
+                OpenSample("35897-type4.xls");
+                Assert.Fail("POI doesn't currently support the RC4 CryptoAPI encryption header structure");
+            }
+            catch (EncryptedDocumentException) { }
+        }
+
+        [Test]
+        public void Bug56450()
+        {
+            HSSFWorkbook wb = OpenSample("56450.xls");
+            HSSFSheet sheet = wb.GetSheetAt(0) as HSSFSheet;
+            int comments = 0;
+            foreach (IRow r in sheet)
+            {
+                foreach (ICell c in r)
+                {
+                    if (c.CellComment != null)
+                    {
+                        Assert.IsNotNull(c.CellComment.String.String);
+                        comments++;
+                    }
+                }
+            }
+            Assert.AreEqual(0, comments);
+        }
+
+        [Test]
+        public void Bug56482()
+        {
+            HSSFWorkbook wb = OpenSample("56482.xls");
+            Assert.AreEqual(1, wb.NumberOfSheets);
+
+            HSSFSheet sheet = wb.GetSheetAt(0) as HSSFSheet;
+            HSSFSheetConditionalFormatting cf = sheet.SheetConditionalFormatting as HSSFSheetConditionalFormatting;
+
+            Assert.AreEqual(5, cf.NumConditionalFormattings);
+        }
+
+        [Test]
+        public void Bug56325()
+        {
+            HSSFWorkbook wb;
+
+            FileInfo file = HSSFTestDataSamples.GetSampleFile("56325.xls");
+            Stream stream = new FileStream(file.FullName, FileMode.Open, FileAccess.ReadWrite);
+            try
+            {
+                POIFSFileSystem fs = new POIFSFileSystem(stream);
+                wb = new HSSFWorkbook(fs);
+            }
+            finally
+            {
+                stream.Close();
+            }
+
+            Assert.AreEqual(3, wb.NumberOfSheets);
+            wb.RemoveSheetAt(0);
+            Assert.AreEqual(2, wb.NumberOfSheets);
+
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+            Assert.AreEqual(2, wb.NumberOfSheets);
+            wb.RemoveSheetAt(0);
+            Assert.AreEqual(1, wb.NumberOfSheets);
+            wb.RemoveSheetAt(0);
+            Assert.AreEqual(0, wb.NumberOfSheets);
+
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+            Assert.AreEqual(0, wb.NumberOfSheets);
+        }
+
+        [Test]
+        public void Bug56325a()
+        {
+            HSSFWorkbook wb = HSSFTestDataSamples.OpenSampleWorkbook("56325a.xls");
+
+            HSSFSheet sheet = wb.CloneSheet(2) as HSSFSheet;
+            wb.SetSheetName(3, "Clone 1");
+            sheet.RepeatingRows = (/*setter*/CellRangeAddress.ValueOf("2:3"));
+            wb.SetPrintArea(3, "$A$4:$C$10");
+
+            sheet = wb.CloneSheet(2) as HSSFSheet;
+            wb.SetSheetName(4, "Clone 2");
+            sheet.RepeatingRows = (/*setter*/CellRangeAddress.ValueOf("2:3"));
+            wb.SetPrintArea(4, "$A$4:$C$10");
+
+            wb.RemoveSheetAt(2);
+
+            IWorkbook wbBack = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+            Assert.AreEqual(4, wbBack.NumberOfSheets);
+
+            //        OutputStream fOut = new FileOutputStream("/tmp/56325a.xls");
+            //        try {
+            //        	wb.Write(fOut);
+            //        } finally {
+            //        	fOut.Close();
+            //        }
+        }
+
+
+        /**
+         * Formulas which reference named ranges, either in other
+         *  sheets, or workbook scoped but in other workbooks.
+         * Currently failing with 
+         * java.lang.Exception: Unexpected eval class (NPOI.SS.Formula.Eval.NameXEval)
+         */
+        [Test]
+        public void Bug56737()
+        {
+            IWorkbook wb = OpenSample("56737.xls");
+
+            // Check the named range defInitions
+            IName nSheetScope = wb.GetName("NR_To_A1");
+            IName nWBScope = wb.GetName("NR_Global_B2");
+
+            Assert.IsNotNull(nSheetScope);
+            Assert.IsNotNull(nWBScope);
+
+            Assert.AreEqual("Defines!$A$1", nSheetScope.RefersToFormula);
+            Assert.AreEqual("Defines!$B$2", nWBScope.RefersToFormula);
+
+            // Check the different kinds of formulas
+            ISheet s = wb.GetSheetAt(0);
+            ICell cRefSName = s.GetRow(1).GetCell(3);
+            ICell cRefWName = s.GetRow(2).GetCell(3);
+
+            Assert.AreEqual("Defines!NR_To_A1", cRefSName.CellFormula);
+            // TODO How does Excel know to prefix this with the filename?
+            // This is what Excel itself shows
+            //assertEquals("'56737.xls'!NR_Global_B2", cRefWName.getCellFormula());
+            // TODO This isn't right, but it's what we currently generate....
+            Assert.AreEqual("NR_Global_B2", cRefWName.CellFormula);
+        
+
+            // Try to Evaluate them
+            IFormulaEvaluator eval = wb.GetCreationHelper().CreateFormulaEvaluator();
+            Assert.AreEqual("Test A1", eval.Evaluate(cRefSName).StringValue);
+            Assert.AreEqual(142, (int)eval.Evaluate(cRefWName).NumberValue);
+
+            // Try to Evaluate everything
+            eval.EvaluateAll();
+
+        }
+
+        /**
+         * InvalidCastException in HSSFOptimiser - StyleRecord cannot be cast to 
+         * ExtendedFormatRecord when removing un-used styles
+         */
+        [Test]
+        public void Bug54443()
+        {
+            HSSFWorkbook workbook = new HSSFWorkbook();
+            HSSFCellStyle style = workbook.CreateCellStyle() as HSSFCellStyle;
+            HSSFCellStyle newStyle = workbook.CreateCellStyle() as HSSFCellStyle;
+
+            HSSFSheet mySheet = workbook.CreateSheet() as HSSFSheet;
+            HSSFRow row = mySheet.CreateRow(0) as HSSFRow;
+            HSSFCell cell = row.CreateCell(0) as HSSFCell;
+
+            // Use style
+            cell.CellStyle = (/*setter*/style);
+            // Switch to newStyle, style is now un-used
+            cell.CellStyle = (/*setter*/newStyle);
+
+            // Optimise
+            HSSFOptimiser.OptimiseCellStyles(workbook);
+        }
+
+        /**
+         * Intersection formula ranges, eg =(C2:D3 D3:E4)
+         */
+        [Test]
+        public void Bug52111()
+        {
+            IWorkbook wb = OpenSample("Intersection-52111.xls");
+            ISheet s = wb.GetSheetAt(0);
+
+            // Check we can read it correctly
+            ICell intF = s.GetRow(2).GetCell(0);
+            Assert.AreEqual(CellType.Formula, intF.CellType);
+            Assert.AreEqual(CellType.Numeric, intF.CachedFormulaResultType);
+
+            Assert.AreEqual("(C2:D3 D3:E4)", intF.CellFormula);
+
+            // Check we can Evaluate it correctly
+            IFormulaEvaluator eval = wb.GetCreationHelper().CreateFormulaEvaluator();
+            Assert.AreEqual("4", eval.Evaluate(intF).FormatAsString());
+        }
+        [Test]
+        public void Bug42016()
+        {
+            IWorkbook wb = OpenSample("42016.xls");
+            ISheet s = wb.GetSheetAt(0);
+            for (int row = 0; row < 7; row++)
+            {
+                Assert.AreEqual("A$1+B$1", s.GetRow(row).GetCell(2).CellFormula);
+            }
+        }
+
+        /**
+         * Unexpected record type (NPOI.HSSF.Record.ColumnInfoRecord)
+         */
+        [Test]
+        public void Bug53984()
+        {
+            IWorkbook wb = OpenSample("53984.xls");
+            ISheet s = wb.GetSheetAt(0);
+            Assert.AreEqual("International Communication Services SA", s.GetRow(2).GetCell(0).StringCellValue);
+            Assert.AreEqual("Saudi Arabia-Riyadh", s.GetRow(210).GetCell(0).StringCellValue);
+        }
+
+        /**
+     * Read, Write, read for formulas point to cells in other files.
+     * See {@link #bug46670()} for the main test, this just
+     *  covers Reading an existing file and Checking it.
+     * TODO Fix this so that it works - formulas are ending up as
+     *  #REF when being Changed
+     */
+        //    [Test]
+        public void bug46670_existing()
+        {
+            HSSFWorkbook wb;
+            ISheet s;
+            ICell c;
+
+            // Expected values
+            String refLocal = "'[refs/airport.xls]Sheet1'!$A$2";
+            String refHttp = "'[9http://www.principlesofeconometrics.com/excel/airline.xls]Sheet1'!$A$2";
+
+            // Check we can read them correctly
+            wb = OpenSample("46670_local.xls");
+            s = wb.GetSheetAt(0);
+            Assert.AreEqual(refLocal, s.GetRow(0).GetCell(0).CellFormula);
+
+            wb = OpenSample("46670_http.xls");
+            s = wb.GetSheetAt(0);
+            Assert.AreEqual(refHttp, s.GetRow(0).GetCell(0).CellFormula);
+
+            // Now try to Set them to the same values, and ensure that
+            //  they end up as they did before, even with a save and re-load
+            wb = OpenSample("46670_local.xls");
+            s = wb.GetSheetAt(0);
+            c = s.GetRow(0).GetCell(0);
+            c.CellFormula = (/*setter*/refLocal);
+            Assert.AreEqual(refLocal, c.CellFormula);
+
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+            s = wb.GetSheetAt(0);
+            Assert.AreEqual(refLocal, s.GetRow(0).GetCell(0).CellFormula);
+
+
+            wb = OpenSample("46670_http.xls");
+            s = wb.GetSheetAt(0);
+            c = s.GetRow(0).GetCell(0);
+            c.CellFormula = (/*setter*/refHttp);
+            Assert.AreEqual(refHttp, c.CellFormula);
+
+            wb = HSSFTestDataSamples.WriteOutAndReadBack(wb);
+            s = wb.GetSheetAt(0);
+            Assert.AreEqual(refHttp, s.GetRow(0).GetCell(0).CellFormula);
+        }
+
+        [Test]
+        public void Test57163()
+        {
+            IWorkbook wb = OpenSample("57163.xls");
+
+            while (wb.NumberOfSheets > 1)
+            {
+                wb.RemoveSheetAt(1);
+            }
+            wb.Close();
+        }
+
     }
 }

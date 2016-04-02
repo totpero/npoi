@@ -22,18 +22,18 @@ namespace NPOI.XWPF.UserModel
     /**
      * saves the begin and end position  of a text in a Paragraph
     */
-    public class TextSegement
+    public class TextSegment
     {
         private PositionInParagraph beginPos;
         private PositionInParagraph endPos;
 
-        public TextSegement()
+        public TextSegment()
         {
             this.beginPos = new PositionInParagraph();
             this.endPos = new PositionInParagraph();
         }
 
-        public TextSegement(int beginRun, int endRun, int beginText, int endText, int beginChar, int endChar)
+        public TextSegment(int beginRun, int endRun, int beginText, int endText, int beginChar, int endChar)
         {
             PositionInParagraph beginPos = new PositionInParagraph(beginRun, beginText, beginChar);
             PositionInParagraph endPos = new PositionInParagraph(endRun, endText, endChar);
@@ -41,7 +41,7 @@ namespace NPOI.XWPF.UserModel
             this.endPos = endPos;
         }
 
-        public TextSegement(PositionInParagraph beginPos, PositionInParagraph endPos)
+        public TextSegment(PositionInParagraph beginPos, PositionInParagraph endPos)
         {
             this.beginPos = beginPos;
             this.endPos = endPos;
@@ -66,7 +66,9 @@ namespace NPOI.XWPF.UserModel
                 return endPos;
             }
         }
-
+        /// <summary>
+        /// The index of the start run
+        /// </summary>
         public int BeginRun
         {
             get
@@ -78,7 +80,9 @@ namespace NPOI.XWPF.UserModel
                 beginPos.Run = value;
             }
         }
-
+        /// <summary>
+        /// The index of the start CT_Text
+        /// </summary>
         public int BeginText
         {
             get
@@ -90,7 +94,9 @@ namespace NPOI.XWPF.UserModel
                 beginPos.Text = value;
             }
         }
-
+        /// <summary>
+        /// The index of the start text character
+        /// </summary>
         public int BeginChar
         {
             get
@@ -113,7 +119,9 @@ namespace NPOI.XWPF.UserModel
                 endPos.Run = value;
             }
         }
-
+        /// <summary>
+        /// the index of the end CT_Text 
+        /// </summary>
         public int EndText
         {
             get
@@ -125,6 +133,9 @@ namespace NPOI.XWPF.UserModel
                 endPos.Text = value;
             }
         }
+        /// <summary>
+        /// the index of the end text character
+        /// </summary>
         public int EndChar
         {
             get
